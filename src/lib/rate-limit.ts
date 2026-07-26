@@ -28,6 +28,8 @@ export const RATE_LIMITS = {
   api: { maxRequests: 60, windowSeconds: 60 },
   /** Auth routes — prevent brute force */
   auth: { maxRequests: 10, windowSeconds: 60 },
+  /** Coaching chat messages — generous per-session budget, bounded daily cost */
+  coachChat: { maxRequests: 40, windowSeconds: 60 * 60 * 24 },
 } as const;
 
 // In-memory store. Entries are auto-cleaned on access.

@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface AuthFormProps {
   mode: "login" | "register";
@@ -61,29 +62,30 @@ export function AuthForm({ mode }: AuthFormProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <Card className="p-6">
+    <CardContent className="space-y-6 p-0">
       <div className="text-center">
-        <h1 className="text-2xl font-bold tracking-tight">
-          {isLogin ? "Welcome back" : "Create an account"}
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">
+          {isLogin ? "Bentornato" : "Crea un account"}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
           {isLogin
-            ? "Sign in to your account"
-            : "Enter your details to get started"}
+            ? "Accedi al tuo account"
+            : "Inserisci i tuoi dati per iniziare"}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {!isLogin && (
           <div className="space-y-1.5">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name">Nome</Label>
             <Input
               id="name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              placeholder="Your name"
+              placeholder="Il tuo nome"
             />
           </div>
         )}
@@ -108,7 +110,7 @@ export function AuthForm({ mode }: AuthFormProps) {
                 href="/forgot-password"
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
-                Forgot password?
+                Password dimenticata?
               </Link>
             )}
           </div>
@@ -125,19 +127,19 @@ export function AuthForm({ mode }: AuthFormProps) {
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <Button type="submit" disabled={loading} className="w-full">
+        <Button type="submit" disabled={loading} className="w-full" variant="accent">
           {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-          {isLogin ? "Sign in" : "Create account"}
+          {isLogin ? "Accedi" : "Crea account"}
         </Button>
       </form>
 
       {/* Divider */}
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
+          <span className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">or</span>
+          <span className="bg-card px-2 text-muted-foreground">oppure</span>
         </div>
       </div>
 
@@ -166,19 +168,20 @@ export function AuthForm({ mode }: AuthFormProps) {
             fill="#EA4335"
           />
         </svg>
-        Continue with Google
+        Continua con Google
       </Button>
 
       {/* Switch mode */}
       <p className="text-center text-sm text-muted-foreground">
-        {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+        {isLogin ? "Non hai un account?" : "Hai già un account?"}{" "}
         <Link
           href={isLogin ? "/register" : "/login"}
           className="text-foreground underline underline-offset-2 hover:text-foreground/80 transition-colors"
         >
-          {isLogin ? "Sign up" : "Sign in"}
+          {isLogin ? "Registrati" : "Accedi"}
         </Link>
       </p>
-    </div>
+    </CardContent>
+    </Card>
   );
 }

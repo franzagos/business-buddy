@@ -1,8 +1,8 @@
-# Simo's Agentic Coding Boilerplate — AI Assistant Guidelines
+# Business Buddy — AI Assistant Guidelines
 
 ## Project Overview
 
-A production-ready Next.js boilerplate for building AI-powered web applications. Works with any modern AI coding agent — Claude Code, OpenAI Codex, or Cursor Composer.
+Business Buddy is an AI coaching web app: three coaches (Executive, Agency, Startup) with streaming chat, session history, structured progress/memory tracking, and an Advisory Board of expert personas, ported from the user's own Claude Skills coaching system. Built on a production-ready Next.js foundation. Works with any modern AI coding agent — Claude Code, OpenAI Codex, or Cursor Composer.
 
 ### Tech Stack
 

@@ -1,19 +1,25 @@
 import Link from "next/link";
+import { Compass } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-6">
-      <div className="max-w-md text-center">
-        <h2 className="text-2xl font-bold mb-2">Page not found</h2>
-        <p className="text-muted-foreground mb-6">
-          The page you&apos;re looking for doesn&apos;t exist.
-        </p>
-        <Link
-          href="/"
-          className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 transition-colors"
-        >
-          Go home
-        </Link>
+    <div className="flex min-h-screen items-center justify-center bg-background px-6 py-8">
+      <div className="max-w-md space-y-4 text-center">
+        <span className="mx-auto flex size-11 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+          <Compass className="size-5" />
+        </span>
+        <div className="space-y-1.5">
+          <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground">
+            Pagina non trovata
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            La pagina che cerchi non esiste o è stata spostata.
+          </p>
+        </div>
+        <Button asChild variant="accent">
+          <Link href="/">Torna alla home</Link>
+        </Button>
       </div>
     </div>
   );
