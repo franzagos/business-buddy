@@ -104,6 +104,18 @@ export function ChatTranscript({
       if (res.status === 401) {
         throw new Error("Sessione scaduta. Effettua di nuovo l'accesso.");
       }
+      if (res.status === 400) {
+        const body = await res.json().catch(() => null);
+        const contentErrors: string[] | undefined =
+          body?.details?.content ?? body?.details?.problem;
+        if (contentErrors?.length) {
+          throw new Error(
+            contentErrors[0].includes("20000")
+              ? "Messaggio troppo lungo (massimo 20.000 caratteri). Prova ad accorciarlo o a dividerlo in più messaggi."
+              : contentErrors[0]
+          );
+        }
+      }
       throw new Error(
         "Qualcosa è andato storto durante l'invio del messaggio. Riprova."
       );

@@ -27,7 +27,7 @@ const paramsSchema = z.object({
 });
 
 const bodySchema = z.object({
-  content: z.string().trim().min(1).max(8000),
+  content: z.string().trim().min(1).max(20000),
 });
 
 const WRAP_UP_KEYWORDS = [

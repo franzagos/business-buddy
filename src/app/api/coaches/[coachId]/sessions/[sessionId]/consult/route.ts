@@ -14,7 +14,7 @@ const paramsSchema = z.object({
 });
 
 const bodySchema = z.object({
-  problem: z.string().trim().min(1).max(8000),
+  problem: z.string().trim().min(1).max(20000),
   advisorIds: z.array(z.string()).min(1).max(10),
 });
 
