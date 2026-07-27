@@ -50,8 +50,9 @@ test.describe("Auth guards", () => {
     await expect(page).toHaveURL("/");
   });
 
-  test("unauthenticated user cannot access /profile", async ({ page }) => {
-    await page.goto("/profile");
+  test("unauthenticated user cannot access /coaches/executive", async ({ page }) => {
+    await page.goto("/coaches/executive");
+    // requireAuth() redirects to "/" when there's no session
     await expect(page).toHaveURL("/");
   });
 });

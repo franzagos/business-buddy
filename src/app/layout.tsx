@@ -31,17 +31,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${poppins.variable} ${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}
-        style={
-          {
-            "--font-display": "var(--font-poppins)",
-            "--font-body": "var(--font-inter)",
-            "--font-mono-data": "var(--font-jetbrains-mono)",
-          } as React.CSSProperties
-        }
-      >
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${poppins.variable} ${inter.variable} ${jetbrainsMono.variable}`}
+    >
+      <body className="font-sans antialiased" suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

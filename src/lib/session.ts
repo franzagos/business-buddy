@@ -6,7 +6,7 @@ import { auth } from "@/lib/auth";
  * Routes that require authentication.
  * Add your protected routes here.
  */
-export const protectedRoutes = ["/dashboard", "/profile"];
+export const protectedRoutes = ["/dashboard"];
 
 /**
  * Require authentication in a Server Component.

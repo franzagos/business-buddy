@@ -1,567 +1,114 @@
-# Crea webapp come Simo
-
-Un template Next.js per costruire web app moderne con un agente AI, con una struttura guidata che ti permette di lavorare con gli stessi strumenti dei developer senza dover partire da zero.
-
-> Funziona con **Claude Code** (consigliato), **OpenAI Codex**, o **Cursor Composer**. La scelta si fa nei prerequisiti — i passi 7 e 8 (Mac) o 6 e 7 (Windows) hanno menù a tendina con le istruzioni per ciascuna opzione.
-
----
-
-## Perché ho creato questo template
-
-Tool come Lovable, Replit e ambienti simili sono ottimi per iniziare. Permettono di costruire applicazioni velocemente e abbassano molto la barriera di ingresso.
-
-Il problema è che spesso ti ritrovi a costruire cose da developer senza capire davvero cosa sta succedendo sotto il cofano. Il codice esiste, ma non è davvero tuo. Non sai bene come è organizzato, non sai come ottimizzarlo, e non sai come intervenire quando vuoi fare qualcosa di più avanzato.
-
-Questo boilerplate nasce per fare un passaggio preciso: passare da tool come Lovable o Replit a costruire applicazioni con gli stessi strumenti dei developer, ma con una guida chiara.
-
-**La cosa che lo rende diverso dagli altri template**: risolve il problema classico di Claude Code; più la sessione va avanti, più Claude perde il filo, inizia a contraddirsi e introduce bug che non c'erano.
-
-Il motivo è l'accumulo di contesto. Questo template lo risolve alla radice con un'architettura multi-agente:
-
-- **Orchestratore**; legge la spec, coordina i task, non accumula contesto operativo
-- **Sotto-agenti**; ognuno riceve un brief preciso, esegue un task in isolamento con 200k token freschi, poi chiude
-- **Design system**; la direzione visiva viene estratta dai requisiti e iniettata in ogni brief UI, così lo stile rimane coerente tra un agente e l'altro
-
-Il processo scatta in automatico solo quando serve; per task importanti e strutturati. Per modifiche semplici, Claude lavora direttamente senza overhead.
-
-Il risultato: il codice rimane preciso e consistente dall'inizio alla fine del progetto, anche quando cresce.
-
----
-
-## Per chi è
-
-- Hai iniziato con tool come Lovable o Replit
-- Vuoi costruire applicazioni web reali
-- Vuoi capire meglio cosa succede dietro al codice
-- Vuoi avere più controllo sul tuo software
-- Vuoi lavorare con strumenti da developer senza sentirti completamente perso
-
----
-
-## Cosa include
-
-Autenticazione, database, AI, UI e sicurezza sono già configurati. Parti subito a costruire le feature.
-
-| | |
-|---|---|
-| **Auth** | Email/password + Google OAuth |
-| **Database** | PostgreSQL + Drizzle ORM |
-| **AI** | 100+ modelli via OpenRouter |
-| **UI** | shadcn/ui + Tailwind 4 + dark mode |
-| **Sicurezza** | Rate limiting, CSP, validazione input, path traversal protection |
-| **Storage** | Locale in dev, Vercel in produzione |
-
----
-
-<details>
-<summary><b>📦 Prima installazione (una tantum) — clicca per espandere</b></summary>
-
-<br>
-
-> **Da fare una sola volta nella vita**, mai più. Se hai già configurato il tuo computer per un progetto precedente, salta direttamente a [Come iniziare](#come-iniziare) qui sotto.
-
-Questi strumenti vanno installati **una sola volta**. Una volta completato questo setup, non dovrai più rifarlo — né per questo progetto né per quelli futuri.
-
-> **Come funziona il terminale**: incolli un comando, premi `Invio`, e aspetti. Sai che ha finito quando ricompare la riga con il tuo nome utente (es. `mario@MacBook %`). A quel punto puoi incollare il comando successivo. Non serve aprire un nuovo terminale tra un comando e l'altro, a meno che non sia indicato esplicitamente.
-
-Segui le istruzioni per il tuo sistema operativo:
-
----
-
-### Se usi Mac
-
-#### 1. Apri il Terminale
-
-Premi `Cmd + Spazio`, scrivi **Terminale**, premi `Invio`. Si apre una finestra con sfondo scuro e testo bianco — è qui che eseguirai tutti i comandi.
-
-#### 2. Homebrew
-
-**Cos'è**: il "negozio" che ti permette di installare programmi da terminale con un solo comando. Senza Homebrew dovresti scaricare ogni tool manualmente.
-
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
-
-- Ti chiederà la **password del Mac** — quando la scrivi non vedrai niente a schermo (nemmeno puntini). È normale, scrivi e premi `Invio`.
-- L'installazione può durare **5–10 minuti**. Vedrai molto testo scorrere. Aspetta finché non ricompare la riga con il tuo nome utente.
-- **Importante**: alla fine Homebrew potrebbe mostrarti 2 righe da copiare sotto la scritta `==> Next steps`. Se le vedi, copiale e incollale nel terminale una alla volta. Servono per attivare Homebrew.
-
-**Come sai che ha funzionato**: chiudi il terminale, riaprilo, e scrivi `brew --version`. Se vedi un numero di versione, è tutto ok.
-
-#### 3. Git
-
-**Cos'è**: il sistema che salva la cronologia del tuo codice. Ogni modifica viene registrata, e puoi sempre tornare a una versione precedente.
-
-```bash
-brew install git
-```
-
-Durata: circa 1 minuto. **Fatto quando**: ricompare la riga col tuo nome utente. Verifica con `git --version`.
-
-**Configura il tuo nome e email** (usa gli stessi del tuo account GitHub):
-
-```bash
-git config --global user.name "Il Tuo Nome"
-git config --global user.email "la-tua-email@esempio.com"
-```
-
-Questi comandi non danno nessun output — è normale. Devi farlo **una volta sola**, vale per tutti i progetti futuri. Se non hai ancora un account GitHub, creane uno su [github.com](https://github.com) — ti servirà dopo.
-
-#### 4. Node.js
-
-**Cos'è**: il motore che esegue il codice della tua app. Senza Node.js, il computer non sa come leggere il codice che scrivi.
-
-```bash
-brew install node
-```
-
-Durata: circa 2 minuti. Verifica con `node --version` — deve mostrare v18 o superiore.
-
-#### 5. pnpm
-
-**Cos'è**: il gestore delle librerie. La tua app usa centinaia di pezzi di codice scritti da altri (pulsanti, connessione al database, ecc.). pnpm li scarica e li tiene aggiornati.
-
-```bash
-sudo npm install -g pnpm
-```
-
-Ti chiederà la password del Mac. Verifica con `pnpm --version`.
-
-#### 6. Docker Desktop
-
-**Cos'è**: Docker fa girare un database sul tuo computer senza che tu debba installare o configurare PostgreSQL manualmente. Pensalo come una "scatola" che contiene il database già pronto.
-
-1. Vai su [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/)
-2. Scarica la versione per il tuo Mac (Apple Silicon o Intel — se non sai quale hai: menu Mela → Informazioni su questo Mac)
-3. Apri il file `.dmg`, trascina Docker nella cartella Applicazioni
-4. Apri Docker Desktop dalle Applicazioni. La prima volta chiede dei permessi — accetta tutto
-
-**Importante**: Docker Desktop deve essere **aperto e in esecuzione** ogni volta che lavori al progetto. Vedrai un'icona di balena nella barra in alto del Mac.
-
-Verifica nel terminale: `docker --version`
-
-#### 7. Editor di codice
-
-**Cos'è**: l'editor dove vedrai e modificherai il codice.
-
-Hai due opzioni — espandi quella che vuoi usare. **Non installare entrambi.**
-
-<details>
-<summary><b>VS Code</b> (consigliato — è quello su cui questo template è stato sviluppato)</summary>
-
-<br>
-
-VS Code è gratuito ed è lo standard usato dalla maggior parte dei developer.
-
-1. Vai su [code.visualstudio.com](https://code.visualstudio.com/)
-2. Scarica, apri il `.dmg`, trascina nella cartella Applicazioni
-3. Apri VS Code
-
-**Installa l'estensione Claude Code**:
-
-4. Clicca l'icona dei quadratini nella barra laterale sinistra (oppure premi `Cmd + Shift + X`)
-5. Cerca **"Claude Code"** nella barra di ricerca
-6. Clicca **Install** sull'estensione di Anthropic
-
-> Preferisci usare **Codex** invece di Claude? Sostituisci l'estensione Claude Code con quella **OpenAI Codex** (cerca "Codex" nel marketplace). Il resto delle istruzioni VS Code rimane identico.
-
-**Il terminale dentro VS Code**:
-
-VS Code ha un terminale integrato — funziona esattamente come il Terminale del Mac, ma è comodo perché resta dentro l'editor senza dover cambiare finestra.
-
-7. Apri il terminale integrato: menu **Terminal → New Terminal** (oppure `` Ctrl + ` ``)
-
-Da questo momento puoi usare questo terminale per tutti i comandi del progetto. **Continua al passo 8** per installare l'agente AI.
-
-</details>
-
-<details>
-<summary><b>Cursor</b> (alternativa — include l'agente AI integrato, ma serve un piano a pagamento)</summary>
-
-<br>
-
-Cursor è un editor basato su VS Code che include il proprio agente AI (Composer). **Sostituisce VS Code completamente** — non si installano entrambi.
-
-> **⚠️ Requisito**: per usare Composer (l'agente AI di Cursor) serve un piano [Cursor Pro](https://cursor.com/pricing) **a pagamento**. Il tier gratuito di Cursor non include Composer.
-
-1. Vai su [cursor.com](https://cursor.com) e scarica Cursor per Mac
-2. Apri il file `.dmg`, trascina Cursor nella cartella Applicazioni
-3. Apri Cursor e fai login con un account che abbia il piano Pro
-
-**Il terminale dentro Cursor**: identico a VS Code. Apri con menu **Terminal → New Terminal** (oppure `` Ctrl + ` ``).
-
-**Importante**: Composer è già integrato — **salta direttamente al passo 9** (Come iniziare). Non devi fare il passo 8 (l'agente AI da terminale).
-
-</details>
-
-#### 8. L'agente AI da terminale
-
-> **Hai scelto Cursor al passo 7?** **Salta questo passaggio.** Cursor ha già Composer integrato — non serve installare nient'altro.
-
-**Cos'è**: l'AI che costruirà la tua app insieme a te. Tu descrivi cosa vuoi, l'agente scrive il codice.
-
-Hai due opzioni — espandi quella che vuoi usare:
-
-<details>
-<summary><b>Claude Code</b> (consigliato — è quello su cui il template è stato testato)</summary>
-
-<br>
-
-Serve uno di questi per usarlo: un piano [Anthropic Max o Pro](https://claude.ai), una [API key Anthropic](https://console.anthropic.com/), oppure un accesso tramite team o azienda.
-
-Nel terminale di VS Code:
-
-```bash
-sudo npm install -g @anthropic-ai/claude-code
-```
-
-Durata: circa 30 secondi. Verifica con `claude --version`.
-
-</details>
-
-<details>
-<summary><b>OpenAI Codex</b> (alternativa)</summary>
-
-<br>
-
-Serve un abbonamento [ChatGPT Plus/Pro/Business](https://openai.com/chatgpt/pricing/) oppure una [API key OpenAI](https://platform.openai.com/api-keys).
-
-> Assicurati di aver installato l'estensione **OpenAI Codex** (non Claude Code) al passo 7.
-
-Nel terminale di VS Code:
-
-```bash
-sudo npm install -g @openai/codex
-```
-
-Verifica con `codex --version`.
-
-**Limite noto**: alcune versioni di Codex non riconoscono i comandi custom come `/starter-prompt`. Se al passo 9 Codex risponde "comando sconosciuto":
-- Apri il file [`.shared/commands/starter-prompt.md`](.shared/commands/starter-prompt.md)
-- Copia tutto il contenuto
-- Incollalo nella chat di Codex come messaggio normale
-
-Lo stesso fallback vale per `/create-spec`, `/continue-feature`, ecc.
-
-</details>
-
----
-
-### Se usi Windows
-
-Prima di tutto, installa **WSL 2** (Windows Subsystem for Linux): segui la [guida ufficiale Microsoft](https://learn.microsoft.com/en-us/windows/wsl/install), scegli Ubuntu come distribuzione. WSL ti permette di usare un ambiente Linux dentro Windows — tutti i tool qui sotto vanno installati dentro Ubuntu, non nel terminale Windows classico.
-
-Apri il terminale Ubuntu e procedi con questi passaggi:
-
-#### 1. Apri il terminale Ubuntu
-
-Cerca "Ubuntu" nel menu Start. Si apre una finestra con sfondo scuro — è qui che eseguirai tutti i comandi.
-
-#### 2. Git
-
-```bash
-sudo apt update && sudo apt install git
-```
-
-Verifica con `git --version`, poi configura nome e email (usa gli stessi del tuo account GitHub):
-
-```bash
-git config --global user.name "Il Tuo Nome"
-git config --global user.email "la-tua-email@esempio.com"
-```
-
-#### 3. Node.js
-
-```bash
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt install -y nodejs
-```
-
-Verifica con `node --version` — deve mostrare v18 o superiore.
-
-#### 4. pnpm
-
-```bash
-sudo npm install -g pnpm
-```
-
-Verifica con `pnpm --version`.
-
-#### 5. Docker Desktop
-
-1. Scarica Docker Desktop per Windows da [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/)
-2. Durante l'installazione, assicurati di selezionare **"Use WSL 2 instead of Hyper-V"**
-3. Apri Docker Desktop → Settings → Resources → WSL Integration → abilita la tua distribuzione Ubuntu
-4. Riavvia Docker Desktop
-
-**Importante**: Docker Desktop deve essere **aperto e in esecuzione** ogni volta che lavori al progetto.
-
-Verifica nel terminale Ubuntu: `docker --version`
-
-#### 6. Editor di codice
-
-Hai due opzioni — espandi quella che vuoi usare. **Non installare entrambi.**
-
-<details>
-<summary><b>VS Code</b> (consigliato — è quello su cui questo template è stato sviluppato)</summary>
-
-<br>
-
-1. Scarica VS Code per Windows da [code.visualstudio.com](https://code.visualstudio.com/)
-2. Installa l'estensione **WSL** (cerca "WSL" nel marketplace delle estensioni) — ti permette di aprire cartelle Linux dentro VS Code
-3. Installa l'estensione **Claude Code** (cerca "Claude Code" nel marketplace)
-
-> Preferisci usare **Codex** invece di Claude? Sostituisci l'estensione Claude Code con quella **OpenAI Codex** (cerca "Codex" nel marketplace). Il resto delle istruzioni VS Code rimane identico.
-
-Per aprire il terminale integrato: menu **Terminal → New Terminal** (oppure `` Ctrl + ` ``). **Assicurati che il terminale sia Ubuntu/WSL, non PowerShell.**
-
-**Continua al passo 7** per installare l'agente AI.
-
-</details>
-
-<details>
-<summary><b>Cursor</b> (alternativa — include l'agente AI integrato, ma serve un piano a pagamento)</summary>
-
-<br>
-
-Cursor è un editor basato su VS Code che include il proprio agente AI (Composer). **Sostituisce VS Code completamente** — non si installano entrambi.
-
-> **⚠️ Requisito**: per usare Composer serve un piano [Cursor Pro](https://cursor.com/pricing) **a pagamento**. Il tier gratuito di Cursor non include Composer.
-
-1. Scarica Cursor per Windows da [cursor.com](https://cursor.com)
-2. Installa Cursor seguendo l'installer
-3. Installa l'estensione **WSL** dentro Cursor (cerca "WSL" nel marketplace) — ti permette di aprire cartelle Linux dentro Cursor
-4. Apri Cursor e fai login con un account che abbia il piano Pro
-
-Per aprire il terminale integrato: menu **Terminal → New Terminal**. Assicurati che sia Ubuntu/WSL, non PowerShell.
-
-**Importante**: Composer è già integrato — **salta direttamente al passo 8** (Come iniziare, all'inizio della prossima sezione). Non devi fare il passo 7 (l'agente AI da terminale).
-
-</details>
-
-#### 7. L'agente AI da terminale
-
-> **Hai scelto Cursor al passo 6?** **Salta questo passaggio.** Cursor ha già Composer integrato — non serve installare nient'altro.
-
-Hai due opzioni — espandi quella che vuoi usare:
-
-<details>
-<summary><b>Claude Code</b> (consigliato — è quello su cui il template è stato testato)</summary>
-
-<br>
-
-Serve uno di questi: un piano [Anthropic Max o Pro](https://claude.ai), una [API key Anthropic](https://console.anthropic.com/), oppure un accesso tramite team o azienda.
-
-Nel terminale Ubuntu:
-
-```bash
-sudo npm install -g @anthropic-ai/claude-code
-```
-
-Verifica con `claude --version`.
-
-</details>
-
-<details>
-<summary><b>OpenAI Codex</b> (alternativa)</summary>
-
-<br>
-
-Serve un abbonamento [ChatGPT Plus/Pro/Business](https://openai.com/chatgpt/pricing/) oppure una [API key OpenAI](https://platform.openai.com/api-keys).
-
-> Assicurati di aver installato l'estensione **OpenAI Codex** (non Claude Code) al passo 6.
-
-Nel terminale Ubuntu:
-
-```bash
-sudo npm install -g @openai/codex
-```
-
-Verifica con `codex --version`.
-
-**Limite noto**: alcune versioni di Codex non riconoscono i comandi custom come `/starter-prompt`. Se Codex risponde "comando sconosciuto", apri il file [`.shared/commands/starter-prompt.md`](.shared/commands/starter-prompt.md), copia il contenuto e incollalo come messaggio normale. Lo stesso vale per gli altri comandi.
-
-</details>
-
----
-
-> **Qualcosa non funziona?** Se un comando dà errore, copia l'intero messaggio di errore e incollalo su [claude.ai](https://claude.ai) con questo prompt:
->
-> *"Sto configurando un progetto Node.js su [Mac / Windows con WSL]. Ho eseguito questo comando: `[incolla il comando]` e ho ottenuto questo errore: `[incolla l'errore]`. Mi guidi passo passo per risolverlo?"*
-
-> **Tutto installato?** Questi passaggi non dovrai più ripeterli. Da qui in poi, ogni volta che vuoi lavorare al progetto ti basta aprire il terminale e Docker Desktop.
-
-</details>
-
----
-
-## Come iniziare
-
-Questi passaggi creano il tuo progetto e aprono una guida interattiva che ti accompagna nel resto della configurazione. Eseguili nel terminale di VS Code, uno alla volta.
-
-### 1. Crea la cartella del progetto
-
-Crea una cartella sul tuo computer dove terrai tutti i progetti web — ad esempio sul Desktop:
-
-1. Apri il **Finder** (Mac) o l'**Esplora file** (Windows, dentro la home di Ubuntu: `/home/tuonome`)
-2. Crea una nuova cartella chiamata **Progetti** (se non ce l'hai già)
-3. Dentro **Progetti**, crea un'altra cartella con il nome della tua app (es. `la-mia-app`)
-
-### 2. Apri la cartella in VS Code
-
-1. Apri **VS Code**
-2. **File → Open Folder** → seleziona la cartella che hai appena creato (es. `la-mia-app`)
-3. Apri il terminale integrato: **Terminal → New Terminal**
-
-### 3. Clona il template
-
-```bash
-git clone https://github.com/simomagazzu/create-app-like-simo.git .
-```
-
-Il punto `.` alla fine è importante — dice a Git di scaricare qui, non in una sotto-cartella.
-
-### 4. Installa le dipendenze
-
-```bash
-pnpm install
-```
-
-Durata: 1–2 minuti. Vedrai molto testo — è normale.
-
-### 5. Crea il file di configurazione (.env)
-
-Il file `.env` è il posto dove la tua app tiene tutte le informazioni segrete: password del database, chiavi API, impostazioni di sicurezza. Non viene mai caricato su GitHub — rimane solo sul tuo computer.
-
-```bash
-cp env.example .env
-```
-
-Non vedrai nessun output — il comando funziona in silenzio. La guida interattiva su localhost ti accompagnerà nel riempirlo passo per passo.
-
-### 6. Avvia Docker Desktop
-
-Apri **Docker Desktop** dalle Applicazioni. Aspetta che l'icona smetta di animarsi — significa che Docker è pronto.
-
-### 7. Avvia il database
-
-```bash
-docker compose up -d
-```
-
-La prima volta può richiedere 1–2 minuti. Le volte successive pochi secondi.
-
-```bash
-pnpm run db:migrate
-```
-
-Vedrai delle righe con i nomi delle tabelle create.
-
-### 8. Avvia il server
-
-```bash
-pnpm dev
-```
-
-Dopo qualche secondo vedrai un messaggio con `http://localhost:3000`. Apri quel link nel browser.
-
-**Trovi una guida interattiva** che ti accompagna nei passaggi rimanenti: generare la chiave segreta, configurare l'autenticazione, scegliere se usare l'AI, e collegare il repo a GitHub.
-
-> **Il server deve restare attivo.** Finché lavori al progetto, lascia il terminale con `pnpm dev` aperto. Per fermarlo: `Ctrl+C`. Per i comandi successivi, apri un **secondo terminale** in VS Code: **Terminal → New Terminal**.
-
-### 9. Quando la guida è completa
-
-Tutti i check obbligatori sono verdi? Avvia il tuo agente AI:
-
-| Se hai installato | Apri così | Poi dentro l'agente scrivi |
+# Business Buddy
+
+Business Buddy is an AI coaching web app built around three business-coach personas — Executive, Agency, and Startup — ported from the founder's own Claude Skills coaching system into a standalone product anyone can sign up and use.
+
+Each coach carries the full persona, style rules, case-based training method, and Advisory Board consultation flow from the original source material. Conversations stream in real time, memory persists per user across sessions, and progress is tracked with rubric scores, open topics, and recurring blind-spot patterns — the same structure the original Markdown-file system used, now backed by a database.
+
+## Features
+
+### Three AI coaches
+Executive Coach (wartime CEO / peacetime growth), Agency Coach, and Startup Coach, each with a faithfully-ported persona and case-method coaching flow. Every reply is checked against a shared writing-quality gate (no em dash, no "Recap:" blocks, no formulaic AI phrasing).
+
+### Streaming chat with session history
+Each coach supports multiple, resumable sessions per user — like ChatGPT/Claude history. Messages stream token-by-token with Markdown rendering, and sessions are auto-titled from the opening message.
+
+### Structured memory & progress tracking
+Progress entries with rubric scores (1-10 per dimension, with deltas vs. previous sessions), open topics, and recurring blind-spot patterns (a pattern seen 3+ times is flagged per the "rule of 3"). Memory is extracted automatically on wrap-up cues or via an explicit "End session & save progress" action.
+
+### Advisory Board
+A fixed roster of expert personas per coach (Munger, Bezos, Horowitz, Annie Duke, Paul Graham, and others), plus a shared "Franz" voice (the founder's own advisor persona, available to every user) and optional personal advisor profiles any user can write for themselves. Used in real-case consulting sessions, logged separately from training progress.
+
+### Rate limiting
+A daily per-user message cap keeps AI cost bounded, with a clear in-app message when the limit is reached — no payment tier in this version.
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router, Turbopack), React 19, TypeScript 5.9
+- **AI**: Vercel AI SDK 5 + OpenRouter, with per-function model routing (chat, advisory board synthesis, memory extraction, session titling)
+- **Auth**: Better Auth (email/password + Google OAuth)
+- **Database**: PostgreSQL + Drizzle ORM
+- **UI**: shadcn/ui + Tailwind CSS 4, Loop design system (navy/teal/cyan, Poppins/Inter/JetBrains Mono), dark mode
+- **Package Manager**: pnpm
+
+## Setup
+
+1. Clone the repo and install dependencies:
+   ```bash
+   git clone <this-repo-url>
+   cd business-buddy
+   pnpm install
+   ```
+
+2. Create your local environment file:
+   ```bash
+   cp env.example .env
+   ```
+   Fill in at minimum:
+   - `OPENROUTER_API_KEY` — required for chat, Advisory Board, memory extraction, and session titling. Get one at [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys).
+   - `BETTER_AUTH_SECRET` — generate with `openssl rand -base64 32`.
+   - `OWNER_EMAIL` — the email of the account that should own the shared "Franz" advisor profile (seeded after that account is created).
+   - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` (optional) — enables "Sign in with Google".
+
+3. Start the database:
+   ```bash
+   docker compose up -d
+   pnpm run db:migrate
+   ```
+
+4. Start the app:
+   ```bash
+   pnpm dev
+   ```
+   Visit `http://localhost:3000`, sign up, then set `OWNER_EMAIL` to that account's email if you haven't already and run:
+   ```bash
+   pnpm run db:seed
+   ```
+   to seed the shared "Franz" advisor profile.
+
+## Environment Variables
+
+| Variable | Required | Description |
 |---|---|---|
-| **Claude Code** | apri un nuovo terminale in VS Code e scrivi `claude` | `/starter-prompt` |
-| **OpenAI Codex** | apri un nuovo terminale in VS Code e scrivi `codex` | `/starter-prompt` |
-| **Cursor Composer** | premi `Cmd + I` (Mac) o `Ctrl + I` (Windows) dentro Cursor | `/starter-prompt` |
+| `POSTGRES_URL` | Yes | Database connection string |
+| `BETTER_AUTH_SECRET` | Yes | Auth session secret |
+| `BETTER_AUTH_URL` | Yes | Base URL for auth callbacks (`http://localhost:3000` in dev) |
+| `NEXT_PUBLIC_APP_URL` | Yes | Public app URL |
+| `OPENROUTER_API_KEY` | Yes | OpenRouter API key, powers all AI features |
+| `OPENROUTER_MODEL_CHAT` | No | Model for coach chat turns (default `anthropic/claude-sonnet-4.5`) |
+| `OPENROUTER_MODEL_BOARD` | No | Model for Advisory Board synthesis (default `anthropic/claude-sonnet-4.5`) |
+| `OPENROUTER_MODEL_MEMORY` | No | Model for memory extraction (default `openai/gpt-4.1-mini`) |
+| `OPENROUTER_MODEL_TITLE` | No | Model for session title generation (default `openai/gpt-4.1-mini`) |
+| `OWNER_EMAIL` | No | Account that owns the shared "Franz" advisor profile, used by `pnpm run db:seed` |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | No | Enables Google OAuth sign-in |
+| `RESEND_API_KEY` / `RESEND_FROM_EMAIL` | No | Enables transactional email |
+| `BLOB_READ_WRITE_TOKEN` | No | Vercel Blob storage in production (local dev uses the filesystem) |
 
-L'agente ti farà una serie di domande su cosa vuoi costruire (chi userà l'app, quali sono le feature principali, che design vuoi) e poi creerà la tua app automaticamente.
+## Development Scripts
 
----
+```bash
+pnpm dev              # Start dev server (Turbopack)
+pnpm check            # Lint + typecheck
+pnpm run db:generate  # Generate a migration after schema.ts changes
+pnpm run db:migrate   # Apply migrations
+pnpm run db:seed      # Seed the shared "Franz" advisor profile (requires OWNER_EMAIL)
+pnpm run db:studio    # Open Drizzle Studio (database GUI)
+pnpm test:e2e         # Run Playwright end-to-end tests
+```
 
-## Il flusso di sviluppo
+## Project Structure
 
-### Costruire una nuova app
-
-Scrivi `/starter-prompt` dentro il tuo agente AI. L'agente ti fa una serie di domande: cosa vuoi costruire, chi lo usa, quali feature, che design vuoi. Poi esplora il codice esistente, crea un piano dettagliato, e inizia a costruire tutto in automatico — una fase alla volta, ognuna in isolamento con un contesto pulito.
-
-Al termine ti ritrovi con la tua app funzionante. Rivedi le modifiche, committi quando sei soddisfatto.
-
-### Aggiungere una feature
-
-Scrivi `/create-spec`. L'agente ti intervista sulla feature, poi genera una spec dettagliata con tutte le decisioni tecniche. Quando la spec è pronta, scrivi `/continue-feature` per costruire tutto in automatico.
-
-### Modifiche semplici
-
-Per bug, testi, stili, piccole correzioni — descrivi direttamente cosa vuoi. L'agente lo fa senza bisogno di spec.
-
-### Prima del deploy
-
-`/deploy-check` — checklist completa: sicurezza, performance, variabili d'ambiente. Ti dice se sei pronto.
-
----
-
-## Cosa funziona allo stesso modo per ogni agente
-
-L'editor (VS Code o Cursor) e l'agente AI (Claude Code, Codex, o Composer) sono i soli passaggi che cambiano. Tutto il resto è identico — la stessa app, gli stessi comandi, la stessa guida:
-
-- I comandi `pnpm install`, `docker compose up -d`, `pnpm dev`, ecc.
-- La guida interattiva su `localhost:3000`
-- I comandi del progetto: `/starter-prompt`, `/create-spec`, `/continue-feature`, `/security-audit`, `/deploy-check`
-- Il file `AGENTS.md` (che Claude legge come `CLAUDE.md`, Codex come `AGENTS.md`, Cursor come regole interne)
-
-Per dettagli tecnici su differenze e limiti per ciascun agente, vedi [`docs/agent-runtimes/`](docs/agent-runtimes/).
-
----
+- `src/lib/coaches/` — per-coach persona, advisory board roster, rubric, and the shared writing-quality gate; `getCoach(coachId)` assembles the final system prompt.
+- `src/lib/coaches/memory.ts` — structured memory extraction from a session transcript into progress entries, open topics, and blind-spot patterns.
+- `src/app/api/coaches/` — session and chat API routes.
+- `src/app/(app)/` — authenticated app shell: coach pages, chat, progress, advisor profile settings.
+- `docs/features/` — living documentation of each capability (`coaching-chat.md`, `coaching-memory.md`, `coaching-shell.md`).
+- `specs/coaching-platform/` — requirements and architecture decisions behind the coaching platform.
 
 ## Deploy
 
-1. Push su GitHub
-2. Importa su [Vercel](https://vercel.com)
-3. Aggiungi le variabili d'ambiente di produzione
-4. Database in produzione: [Neon](https://neon.tech) ha un tier gratuito
-
----
-
-<details>
-<summary>Riferimento tecnico (per developer)</summary>
-
-**Stack completo**: Next.js 16, React 19, TypeScript 5.9, Better Auth, PostgreSQL + Drizzle ORM, Vercel AI SDK 5 + OpenRouter, shadcn/ui, Tailwind 4, Playwright
-
-**Script utili**:
-
-| Comando | |
-|---|---|
-| `pnpm dev` | Server locale (Turbopack) |
-| `pnpm check` | lint + typecheck |
-| `pnpm db:generate` | Genera migrazioni dopo modifiche allo schema |
-| `pnpm db:migrate` | Applica le migrazioni |
-| `pnpm db:studio` | GUI database |
-| `pnpm db:reset` | Svuota e ricrea le tabelle |
-| `pnpm test:e2e` | Test E2E headless |
-| `pnpm test:e2e:ui` | Playwright UI interattiva |
-
-**Comandi del progetto**
-
-| Comando | |
-|---|---|
-| `/starter-prompt` | Costruisce una nuova app da zero (intervista → spec → build automatica) |
-| `/create-spec` | Crea la spec per una nuova feature |
-| `/continue-feature` | Esegue tutti i task della spec |
-| `/security-audit` | Security review: prima produce il report, poi chiede conferma prima di applicare fix |
-| `/deploy-check` | Verifica che tutto sia pronto per il deploy |
-
-I file dei comandi vivono in `.shared/commands/` — una sola fonte di verità che ogni agente legge attraverso symlink (`.claude/commands/`, `.agents/commands/`, `.cursor/commands/`).
-
-**Architettura multi-agente** (interna ai comandi shared, capability-aware — vedi [`.shared/CAPABILITIES.md`](.shared/CAPABILITIES.md) per il modello completo): quando il runtime dell'agente supporta sub-agenti paralleli in background, ogni task viene eseguito con contesto fresco in parallelo. Altrimenti lo stesso orchestratore esegue i task sequenzialmente nella sessione principale — stesso output, più lento. È invisibile all'utente.
-
-**Stato di verifica**: lo sviluppo base (editing, lint, typecheck, build) funziona identicamente con Claude Code, Codex, e Cursor. Il percorso parallelo dei comandi shared è verificato su Claude Code; su Codex e Cursor dipende dalla versione del runtime — vedi [`docs/agent-runtimes/`](docs/agent-runtimes/) per lo status corrente e una checklist di smoke test.
-
-*Ispirato dall'[Agentic Coding Starter Kit di Leon van Zyl](https://github.com/leonvanzyl/agentic-coding-starter-kit).*
-
-</details>
+1. Push to GitHub.
+2. Import the repo on [Vercel](https://vercel.com).
+3. Add production environment variables.
+4. Use a managed Postgres instance in production — [Neon](https://neon.tech) has a free tier.
 
 MIT License

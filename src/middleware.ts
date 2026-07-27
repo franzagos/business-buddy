@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const protectedRoutes = ["/dashboard", "/profile"];
+const protectedRoutes = ["/dashboard"];
 
 function isProtectedRoute(path: string): boolean {
   return protectedRoutes.some(
@@ -36,5 +36,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/profile/:path*"],
+  matcher: ["/dashboard/:path*"],
 };

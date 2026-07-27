@@ -20,23 +20,23 @@ export const COACH_META: Record<CoachId, CoachMeta> = {
     name: "Executive Coach",
     tagline: "Wartime CEO + crescita",
     description:
-      "30 anni nelle trincee di PMI e scale-up. Casi reali, niente teoria da manuale, per decisioni da wartime CEO e per la crescita in tempo di pace.",
+      "Ti allena con casi estremi da wartime CEO e da tempo di pace, poi mette il tuo piano davanti a un Advisory Board di pareri diversi per trovare i punti ciechi prima che te li trovi la realtà.",
     icon: Briefcase,
   },
   agency: {
     id: "agency",
     name: "Agency Coach",
-    tagline: "25 anni dentro le agenzie",
+    tagline: "Il mestiere delle agenzie",
     description:
-      "Dal primo account alla direzione di agenzia. Utilization, scope creep, cliente-ancora, churn del team: il mestiere visto da dentro.",
+      "Utilization, scope creep, cliente-ancora, churn del team: ti allena su casi concreti e confronta il tuo piano con più prospettive prima che tu lo metta in pratica.",
     icon: Megaphone,
   },
   startup: {
     id: "startup",
     name: "Startup Coach",
-    tagline: "Dal foglio bianco all'exit",
+    tagline: "Dal foglio bianco alla crescita",
     description:
-      "Tre term sheet negoziati, un board da allineare, un cap table sporcato round dopo round. Runway, investitori, valutazione, costi opportunità.",
+      "Runway, investitori, cap table, prime assunzioni: ti allena a decidere sotto pressione e ti mette a confronto con pareri diversi prima di ogni mossa che conta.",
     icon: Rocket,
   },
 };
