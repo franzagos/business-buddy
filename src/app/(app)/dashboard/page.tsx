@@ -1,13 +1,15 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import Link from "next/link";
-import { ArrowRight, MessagesSquare, Sparkles } from "lucide-react";
+import { ArrowRight, Compass, MessagesSquare, Sparkles } from "lucide-react";
 import { requireAuth } from "@/lib/session";
 import { db } from "@/lib/db";
-import { coachingSession } from "@/lib/schema";
+import { coachingSession, openTopic } from "@/lib/schema";
 import { COACH_META_LIST } from "@/lib/coaches/meta";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { NewSessionButton } from "@/components/chat/new-session-button";
+import { ResumeTopicButton } from "@/components/chat/resume-topic-button";
+import type { CoachId } from "@/lib/coaches";
 
 export default async function AppHomePage() {
   const session = await requireAuth();
@@ -31,6 +33,17 @@ export default async function AppHomePage() {
 
   const hasAnySession = sessions.length > 0;
   const firstName = session.user.name?.split(" ")[0] || "";
+
+  const openTopics = await db
+    .select({
+      id: openTopic.id,
+      coachId: openTopic.coachId,
+      topic: openTopic.topic,
+    })
+    .from(openTopic)
+    .where(and(eq(openTopic.userId, session.user.id), eq(openTopic.status, "open")))
+    .orderBy(desc(openTopic.createdAt))
+    .limit(5);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-6 py-8">
@@ -83,6 +96,38 @@ export default async function AppHomePage() {
           );
         })}
       </div>
+
+      {openTopics.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+            <Compass className="size-4" />
+            Temi ancora aperti
+          </h2>
+          <div className="space-y-2">
+            {openTopics.map((t) => {
+              const meta = COACH_META_LIST.find((c) => c.id === t.coachId);
+              return (
+                <Card key={t.id} className="p-4">
+                  <CardContent className="flex items-center justify-between gap-4 p-0">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {t.topic}
+                      </p>
+                      <p className="font-mono text-xs text-muted-foreground">
+                        {meta?.name ?? t.coachId}
+                      </p>
+                    </div>
+                    <ResumeTopicButton
+                      coachId={t.coachId as CoachId}
+                      topic={t.topic}
+                    />
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {hasAnySession && (
         <div className="space-y-3">

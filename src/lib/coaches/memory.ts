@@ -95,7 +95,11 @@ function extractJson(raw: string): unknown | null {
  * Tolerant by design: any parsing/model failure is swallowed (logged to
  * console) so a failed extraction never breaks the calling request.
  */
-export async function extractMemory(sessionId: string): Promise<void> {
+export type ProgressEntryRow = typeof progressEntry.$inferSelect;
+
+export async function extractMemory(
+  sessionId: string
+): Promise<ProgressEntryRow | null> {
   try {
     const [sessionRow] = await db
       .select({
@@ -107,7 +111,7 @@ export async function extractMemory(sessionId: string): Promise<void> {
       .where(eq(coachingSession.id, sessionId))
       .limit(1);
 
-    if (!sessionRow) return;
+    if (!sessionRow) return null;
 
     const messages = await db
       .select({
@@ -120,7 +124,7 @@ export async function extractMemory(sessionId: string): Promise<void> {
       .limit(200);
 
     // Not enough content to extract anything meaningful.
-    if (messages.filter((m) => m.role === "user").length === 0) return;
+    if (messages.filter((m) => m.role === "user").length === 0) return null;
 
     const transcript = messages
       .map((m) => `${m.role === "user" ? "UTENTE" : "COACH"}: ${m.content}`)
@@ -133,26 +137,31 @@ export async function extractMemory(sessionId: string): Promise<void> {
     });
 
     const json = extractJson(text);
-    if (json === null) return;
+    if (json === null) return null;
 
     const parsed = extractionSchema.safeParse(json);
-    if (!parsed.success) return;
+    if (!parsed.success) return null;
 
     const extraction: Extraction = parsed.data;
     const { userId, coachId } = sessionRow;
 
+    let insertedEntry: ProgressEntryRow | null = null;
     if (extraction.progressEntry) {
       const pe = extraction.progressEntry;
-      await db.insert(progressEntry).values({
-        userId,
-        coachId,
-        sessionId,
-        register: pe.register ?? null,
-        decision: pe.decision ?? null,
-        blindSpots: pe.blindSpots ?? null,
-        scores: pe.scores ?? null,
-        lesson: pe.lesson ?? null,
-      });
+      const [row] = await db
+        .insert(progressEntry)
+        .values({
+          userId,
+          coachId,
+          sessionId,
+          register: pe.register ?? null,
+          decision: pe.decision ?? null,
+          blindSpots: pe.blindSpots ?? null,
+          scores: pe.scores ?? null,
+          lesson: pe.lesson ?? null,
+        })
+        .returning();
+      insertedEntry = row;
     }
 
     if (extraction.openTopics && extraction.openTopics.length > 0) {
@@ -203,10 +212,13 @@ export async function extractMemory(sessionId: string): Promise<void> {
         }
       }
     }
+
+    return insertedEntry;
   } catch (err) {
     // Memory extraction is best-effort — never let it break the caller
     // (a chat turn or the explicit "end session" action).
     console.error("extractMemory failed", { sessionId, err });
+    return null;
   }
 }
 

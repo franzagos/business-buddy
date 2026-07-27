@@ -1,9 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, LineChart, LogOut, User, UserCircle2, Home } from "lucide-react";
+import {
+  Menu,
+  X,
+  LineChart,
+  LogOut,
+  User,
+  UserCircle2,
+  Home,
+  Briefcase,
+} from "lucide-react";
 import { signOut, useSession } from "@/lib/auth-client";
 import { COACH_META_LIST } from "@/lib/coaches/meta";
 import { cn } from "@/lib/utils";
@@ -41,7 +50,7 @@ function SidebarContent({ recentSessions = [] }: SidebarProps) {
         <Link
           href="/dashboard"
           className={cn(
-            "flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-sm transition-colors ease-[var(--ease-snap)] duration-150",
+            "flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-sm transition-colors ease-[var(--ease-snap)] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
             pathname === "/dashboard"
               ? "bg-sidebar-accent text-sidebar-foreground font-medium"
               : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground"
@@ -65,7 +74,7 @@ function SidebarContent({ recentSessions = [] }: SidebarProps) {
               key={coach.id}
               href={href}
               className={cn(
-                "flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-sm transition-colors ease-[var(--ease-snap)] duration-150",
+                "flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-sm transition-colors ease-[var(--ease-snap)] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
                 active
                   ? "bg-sidebar-accent text-sidebar-foreground font-medium"
                   : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground"
@@ -90,7 +99,7 @@ function SidebarContent({ recentSessions = [] }: SidebarProps) {
               key={s.id}
               href={`/coaches/${s.coachId}/sessions/${s.id}`}
               className={cn(
-                "truncate rounded-sm px-2.5 py-1.5 text-sm transition-colors ease-[var(--ease-snap)] duration-150",
+                "truncate rounded-sm px-2.5 py-1.5 text-sm transition-colors ease-[var(--ease-snap)] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
                 pathname === `/coaches/${s.coachId}/sessions/${s.id}`
                   ? "bg-sidebar-accent text-sidebar-foreground"
                   : "text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground"
@@ -109,7 +118,7 @@ function SidebarContent({ recentSessions = [] }: SidebarProps) {
         <Link
           href={`/coaches/${COACH_META_LIST[0].id}/progress`}
           className={cn(
-            "flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-sm transition-colors ease-[var(--ease-snap)] duration-150",
+            "flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-sm transition-colors ease-[var(--ease-snap)] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
             pathname?.endsWith("/progress")
               ? "bg-sidebar-accent text-sidebar-foreground font-medium"
               : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground"
@@ -122,7 +131,7 @@ function SidebarContent({ recentSessions = [] }: SidebarProps) {
         <Link
           href="/settings/advisor-profile"
           className={cn(
-            "flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-sm transition-colors ease-[var(--ease-snap)] duration-150",
+            "flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-sm transition-colors ease-[var(--ease-snap)] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
             pathname === "/settings/advisor-profile"
               ? "bg-sidebar-accent text-sidebar-foreground font-medium"
               : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground"
@@ -130,6 +139,19 @@ function SidebarContent({ recentSessions = [] }: SidebarProps) {
         >
           <UserCircle2 className="size-4" />
           Profilo advisor
+        </Link>
+
+        <Link
+          href="/settings/business-profile"
+          className={cn(
+            "flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-sm transition-colors ease-[var(--ease-snap)] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+            pathname === "/settings/business-profile"
+              ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+              : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          )}
+        >
+          <Briefcase className="size-4" />
+          Il tuo business
         </Link>
 
         <div className="flex items-center gap-2.5 truncate px-2.5 py-2 text-sm text-sidebar-foreground/75">
@@ -141,7 +163,7 @@ function SidebarContent({ recentSessions = [] }: SidebarProps) {
 
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-left text-sm text-sidebar-foreground/75 transition-colors ease-[var(--ease-snap)] duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          className="flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-left text-sm text-sidebar-foreground/75 outline-none transition-colors ease-[var(--ease-snap)] duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
         >
           <LogOut className="size-4" />
           Sign out
@@ -153,6 +175,49 @@ function SidebarContent({ recentSessions = [] }: SidebarProps) {
 
 export function Sidebar({ recentSessions = [] }: SidebarProps) {
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const drawerRef = useRef<HTMLDivElement>(null);
+
+  function closeDrawer() {
+    setOpen(false);
+    triggerRef.current?.focus();
+  }
+
+  useEffect(() => {
+    if (!open) return;
+
+    // Focus the first focusable element inside the drawer.
+    const focusables = drawerRef.current?.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled])'
+    );
+    focusables?.[0]?.focus();
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        closeDrawer();
+        return;
+      }
+      if (e.key !== "Tab") return;
+
+      const nodes = drawerRef.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled])'
+      );
+      if (!nodes || nodes.length === 0) return;
+      const first = nodes[0];
+      const last = nodes[nodes.length - 1];
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open]);
 
   return (
     <>
@@ -162,9 +227,11 @@ export function Sidebar({ recentSessions = [] }: SidebarProps) {
           Business Buddy
         </Link>
         <button
+          ref={triggerRef}
           onClick={() => setOpen(true)}
-          aria-label="Open menu"
-          className="flex size-9 items-center justify-center rounded-sm hover:bg-sidebar-accent"
+          aria-label="Apri il menu"
+          aria-expanded={open}
+          className="flex size-9 items-center justify-center rounded-sm transition-colors ease-[var(--ease-snap)] duration-150 hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring outline-none"
         >
           <Menu className="size-5" />
         </button>
@@ -174,16 +241,22 @@ export function Sidebar({ recentSessions = [] }: SidebarProps) {
       {open && (
         <div className="fixed inset-0 z-50 md:hidden">
           <button
-            aria-label="Close menu"
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setOpen(false)}
+            aria-label="Chiudi il menu"
+            className="motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150 absolute inset-0 bg-black/40"
+            onClick={closeDrawer}
           />
-          <div className="ease-[var(--ease-settle)] relative flex h-full w-72 max-w-[85vw] flex-col bg-sidebar shadow-xl duration-200">
+          <div
+            ref={drawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu di navigazione"
+            className="ease-[var(--ease-settle)] motion-safe:animate-in motion-safe:slide-in-from-left relative flex h-full w-72 max-w-[85vw] flex-col bg-sidebar shadow-xl duration-200"
+          >
             <div className="flex items-center justify-end px-3 pt-3">
               <button
-                onClick={() => setOpen(false)}
-                aria-label="Close menu"
-                className="flex size-9 items-center justify-center rounded-sm text-sidebar-foreground hover:bg-sidebar-accent"
+                onClick={closeDrawer}
+                aria-label="Chiudi il menu"
+                className="flex size-9 items-center justify-center rounded-sm text-sidebar-foreground transition-colors ease-[var(--ease-snap)] duration-150 hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring outline-none"
               >
                 <X className="size-5" />
               </button>

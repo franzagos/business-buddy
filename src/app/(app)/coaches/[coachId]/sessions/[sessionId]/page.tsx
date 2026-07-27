@@ -6,6 +6,7 @@ import { coachingSession, coachingMessage, advisorProfile } from "@/lib/schema";
 import { getCoach, isCoachId } from "@/lib/coaches";
 import { COACH_META } from "@/lib/coaches/meta";
 import { ChatTranscript } from "@/components/chat/chat-transcript";
+import { SessionTitle } from "@/components/chat/session-title";
 
 export default async function ChatSessionPage({
   params,
@@ -52,7 +53,11 @@ export default async function ChatSessionPage({
   const coach = getCoach(coachId);
 
   const dbAdvisors = await db
-    .select({ id: advisorProfile.id, name: advisorProfile.name })
+    .select({
+      id: advisorProfile.id,
+      name: advisorProfile.name,
+      ownerUserId: advisorProfile.ownerUserId,
+    })
     .from(advisorProfile)
     .where(
       or(
@@ -64,8 +69,11 @@ export default async function ChatSessionPage({
 
   const advisors = [
     ...coach.advisoryBoard.map((a) => ({ id: a.id, name: a.name })),
-    ...dbAdvisors,
+    ...dbAdvisors.map((a) => ({ id: a.id, name: a.name })),
   ];
+  const hasOwnAdvisorProfile = dbAdvisors.some(
+    (a) => a.ownerUserId === session.user.id
+  );
 
   return (
     <div className="flex h-screen min-h-0 flex-col">
@@ -73,15 +81,18 @@ export default async function ChatSessionPage({
         <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
           {meta.name}
         </p>
-        <h1 className="font-display text-lg font-semibold tracking-tight text-foreground">
-          {chatSession.title || "Nuova sessione"}
-        </h1>
+        <SessionTitle
+          coachId={coachId}
+          sessionId={sessionId}
+          initialTitle={chatSession.title}
+        />
       </header>
 
       <ChatTranscript
         coachId={coachId}
         sessionId={sessionId}
         advisors={advisors}
+        hasOwnAdvisorProfile={hasOwnAdvisorProfile}
         initialMessages={messages.map((m) => ({
           id: m.id,
           role: m.role as "user" | "assistant",

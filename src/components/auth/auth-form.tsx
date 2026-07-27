@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn, signUp } from "@/lib/auth-client";
 import { Loader2 } from "lucide-react";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { isCoachId } from "@/lib/coaches";
 
 interface AuthFormProps {
   mode: "login" | "register";
@@ -16,6 +17,7 @@ interface AuthFormProps {
 
 export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -23,6 +25,35 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [loading, setLoading] = useState(false);
 
   const isLogin = mode === "login";
+  // If the user arrived from a specific coach's card on the landing page
+  // (?coach=executive), skip the generic dashboard and drop them straight
+  // into a first session with that coach — fewer steps to the first value
+  // moment (see specs/coaching-platform/decisions.md's neuromarketing notes).
+  const coachParam = searchParams.get("coach");
+  const redirectCoach = coachParam && isCoachId(coachParam) ? coachParam : null;
+
+  async function goToDestination() {
+    if (!redirectCoach) {
+      router.push("/dashboard");
+      router.refresh();
+      return;
+    }
+    try {
+      const res = await fetch(`/api/coaches/${redirectCoach}/sessions`, {
+        method: "POST",
+      });
+      if (res.ok) {
+        const { session: newSession } = await res.json();
+        router.push(`/coaches/${redirectCoach}/sessions/${newSession.id}`);
+        router.refresh();
+        return;
+      }
+    } catch {
+      // fall through to dashboard
+    }
+    router.push("/dashboard");
+    router.refresh();
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,8 +74,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           return;
         }
       }
-      router.push("/dashboard");
-      router.refresh();
+      await goToDestination();
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -55,7 +85,10 @@ export function AuthForm({ mode }: AuthFormProps) {
   async function handleGoogleSignIn() {
     setError("");
     try {
-      await signIn.social({ provider: "google", callbackURL: "/dashboard" });
+      await signIn.social({
+        provider: "google",
+        callbackURL: redirectCoach ? `/coaches/${redirectCoach}` : "/dashboard",
+      });
     } catch {
       setError("Google sign-in failed. Is it configured?");
     }

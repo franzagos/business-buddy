@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { AlertCircle, ArrowUp, FlagOff, Loader2, Users } from "lucide-react";
 import { toast } from "sonner";
@@ -16,6 +17,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { CoachId } from "@/lib/coaches";
+import {
+  SessionRecapDialog,
+  type SessionRecap,
+} from "@/components/chat/session-recap-dialog";
+import { Coachmark, useCoachmark } from "@/components/ui/coachmark";
 
 const BOARD_MESSAGE_PREFIX = "[[board]]\n";
 
@@ -35,6 +41,7 @@ interface ChatTranscriptProps {
   sessionId: string;
   initialMessages: ChatMessage[];
   advisors: AdvisorOption[];
+  hasOwnAdvisorProfile: boolean;
 }
 
 export function ChatTranscript({
@@ -42,8 +49,10 @@ export function ChatTranscript({
   sessionId,
   initialMessages,
   advisors,
+  hasOwnAdvisorProfile,
 }: ChatTranscriptProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -53,11 +62,27 @@ export function ChatTranscript({
   const [selectedAdvisors, setSelectedAdvisors] = useState<string[]>([]);
   const [boardProblem, setBoardProblem] = useState("");
   const [isConsulting, setIsConsulting] = useState(false);
+  const [recap, setRecap] = useState<SessionRecap | null>(null);
+  const [recapOpen, setRecapOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const sessionCoachmark = useCoachmark("session-memory");
+  const boardCoachmark = useCoachmark("advisory-board");
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isStreaming, isConsulting]);
+
+  // Pre-fill the input from an open topic the user resumed from the
+  // dashboard (?draft=...) — never auto-sent, the user still reviews it.
+  useEffect(() => {
+    const draft = searchParams.get("draft");
+    if (!draft) return;
+    setInput(draft);
+    const next = new URL(window.location.href);
+    next.searchParams.delete("draft");
+    router.replace(`${next.pathname}${next.search}`, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /** Streams a response from `url` into a new assistant bubble. */
   async function streamInto(
@@ -73,7 +98,7 @@ export function ChatTranscript({
     if (!res.ok) {
       if (res.status === 429) {
         throw new Error(
-          "Hai raggiunto il limite di messaggi di oggi. Torna domani per continuare."
+          "Sessione di oggi conclusa. Anche il miglior coach non ti farebbe allenare 40 round di fila — ci si rivede domani."
         );
       }
       if (res.status === 401) {
@@ -157,7 +182,15 @@ export function ChatTranscript({
         toast.error("Non sono riuscito a salvare i progressi. Riprova.");
         return;
       }
-      toast.success("Sessione chiusa. Progressi salvati.");
+      const data = (await res.json()) as { recap: SessionRecap | null };
+      if (data.recap) {
+        setRecap(data.recap);
+        setRecapOpen(true);
+      } else {
+        toast.info(
+          "Sessione chiusa. Troppo breve per un recap, ma è tutto salvato."
+        );
+      }
       router.refresh();
     } catch {
       toast.error("Non sono riuscito a salvare i progressi. Riprova.");
@@ -270,18 +303,46 @@ export function ChatTranscript({
 
       <div className="border-t border-border bg-background px-6 py-4">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-2 pb-2">
-          <Popover open={boardOpen} onOpenChange={setBoardOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" disabled={busy}>
-                <Users className="size-4" />
-                Advisory Board
-              </Button>
-            </PopoverTrigger>
+          <div className="relative">
+            {boardCoachmark.visible && (
+              <div className="absolute bottom-full left-0 z-40 mb-2">
+                <Coachmark
+                  title="Convoca l'Advisory Board"
+                  description="Chiedi il parere di più esperti, incluso il tuo advisor personale creato nel profilo, per mettere alla prova un'idea invece di deciderla da solo."
+                  onDismiss={boardCoachmark.dismiss}
+                />
+              </div>
+            )}
+            <Popover open={boardOpen} onOpenChange={setBoardOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => {
+                    if (boardCoachmark.visible) boardCoachmark.dismiss();
+                  }}
+                >
+                  <Users className="size-4" />
+                  Advisory Board
+                </Button>
+              </PopoverTrigger>
             <PopoverContent className="w-80" align="start">
               <div className="space-y-3">
                 <p className="text-sm font-medium text-foreground">
                   Convoca l&apos;Advisory Board
                 </p>
+                {!hasOwnAdvisorProfile && (
+                  <p className="rounded-sm bg-secondary px-3 py-2 text-xs text-secondary-foreground">
+                    Prima di sentire gli altri pareri, il tuo qual è?{" "}
+                    <Link
+                      href="/settings/advisor-profile"
+                      className="font-medium underline underline-offset-2"
+                    >
+                      Crea la tua voce
+                    </Link>
+                  </p>
+                )}
                 {advisors.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     Nessun advisor disponibile.
@@ -331,7 +392,8 @@ export function ChatTranscript({
                 </Button>
               </div>
             </PopoverContent>
-          </Popover>
+            </Popover>
+          </div>
 
           <Button
             onClick={handleEndSession}
@@ -348,11 +410,27 @@ export function ChatTranscript({
           </Button>
         </div>
 
-        <div className="mx-auto flex max-w-3xl items-end gap-2">
+        <div className="relative mx-auto flex max-w-3xl items-end gap-2">
+          {sessionCoachmark.visible && (
+            <div className="absolute bottom-full left-0 z-40 mb-2">
+              <Coachmark
+                title="Il coach ricorda le sessioni precedenti"
+                description="Ogni scambio viene salvato: il coach tiene traccia dei tuoi progressi nel tempo e li ritrovi nella pagina Progress."
+                onDismiss={sessionCoachmark.dismiss}
+              />
+            </div>
+          )}
+          <label htmlFor="chat-message-input" className="sr-only">
+            Messaggio per il coach
+          </label>
           <textarea
+            id="chat-message-input"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
+            onFocus={() => {
+              if (sessionCoachmark.visible) sessionCoachmark.dismiss();
+            }}
             disabled={busy}
             placeholder="Scrivi il tuo messaggio…"
             rows={2}
@@ -363,6 +441,7 @@ export function ChatTranscript({
             disabled={busy || !input.trim()}
             size="icon"
             className="shrink-0"
+            aria-label="Invia messaggio"
           >
             {isStreaming ? (
               <Loader2 className="size-4 animate-spin" />
@@ -372,6 +451,12 @@ export function ChatTranscript({
           </Button>
         </div>
       </div>
+
+      <SessionRecapDialog
+        recap={recap}
+        open={recapOpen}
+        onOpenChange={setRecapOpen}
+      />
     </div>
   );
 }

@@ -19,6 +19,7 @@ import {
 import { getCoach, isCoachId } from "@/lib/coaches";
 import { getModel } from "@/lib/ai/models";
 import { maybeExtractMemory } from "@/lib/coaches/memory";
+import { buildBusinessContext } from "@/lib/coaches/business-context";
 
 const paramsSchema = z.object({
   coachId: z.string().refine(isCoachId, { message: "Unknown coach" }),
@@ -178,7 +179,10 @@ export async function POST(
   const isFirstUserMessage = existingSession.title === null;
 
   const coach = getCoach(coachId);
-  const memoryContext = await buildMemoryContext(session.user.id, coachId);
+  const [memoryContext, businessContext] = await Promise.all([
+    buildMemoryContext(session.user.id, coachId),
+    buildBusinessContext(session.user.id, coachId),
+  ]);
 
   const [priorMessages] = await Promise.all([
     db
@@ -209,7 +213,7 @@ export async function POST(
 
   const result = streamText({
     model: getModel("chat"),
-    system: `${coach.systemPrompt}${memoryContext}`,
+    system: `${coach.systemPrompt}${memoryContext}${businessContext}`,
     messages: [
       ...priorMessages.map((m) => ({
         role: m.role as "user" | "assistant",
@@ -239,7 +243,7 @@ async function generateTitle(sessionId: string, firstMessage: string) {
     const result = streamText({
       model: getModel("title"),
       system:
-        "Summarize the user's opening message as a short 4-6 word session title, in the same language as the message. Reply with only the title, no quotes, no punctuation at the end.",
+        "Riassumi il messaggio di apertura dell'utente in un titolo di sessione breve (4-6 parole), sempre in italiano, indipendentemente dalla lingua del messaggio. Rispondi solo con il titolo, senza virgolette né punteggiatura finale.",
       prompt: firstMessage,
     });
     const title = (await result.text).trim().slice(0, 120);

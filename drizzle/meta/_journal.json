@@ -15,6 +15,13 @@
       "when": 1785094283449,
       "tag": "0001_steep_sir_ram",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785189702083,
+      "tag": "0002_mute_oracle",
+      "breakpoints": true
     }
   ]
 }

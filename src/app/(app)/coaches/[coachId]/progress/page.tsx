@@ -9,6 +9,7 @@ import { COACH_META } from "@/lib/coaches/meta";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { OpenTopicToggle } from "@/components/progress/open-topic-toggle";
+import { ProgressPageCoachmark } from "@/components/progress/progress-page-coachmark";
 
 interface Score {
   dimension: string;
@@ -126,6 +127,8 @@ export default async function ProgressPage({
           ricorrenti individuati con {meta.name.toLowerCase()}.
         </p>
       </div>
+
+      <ProgressPageCoachmark />
 
       <section className="space-y-3">
         <h2 className="text-sm font-medium text-muted-foreground">

@@ -141,24 +141,30 @@ export default async function LandingPage() {
           {COACH_META_LIST.map((coach) => {
             const Icon = coach.icon;
             return (
-              <Card key={coach.id} className="p-6">
-                <CardContent className="flex h-full flex-col gap-4 p-0">
-                  <span className="flex size-12 shrink-0 items-center justify-center rounded-md bg-secondary text-accent">
-                    <Icon className="size-6" />
-                  </span>
-                  <div className="space-y-1.5">
-                    <h3 className="font-display text-lg font-semibold tracking-tight text-foreground">
-                      {coach.name}
-                    </h3>
-                    <p className="text-xs font-medium tracking-wide text-accent uppercase">
-                      {coach.tagline}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {coach.description}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              <Link key={coach.id} href={`/register?coach=${coach.id}`}>
+                <Card className="h-full p-6 transition-colors ease-[var(--ease-snap)] duration-150 hover:border-accent/40">
+                  <CardContent className="flex h-full flex-col gap-4 p-0">
+                    <span className="flex size-12 shrink-0 items-center justify-center rounded-md bg-secondary text-accent">
+                      <Icon className="size-6" />
+                    </span>
+                    <div className="space-y-1.5">
+                      <h3 className="font-display text-lg font-semibold tracking-tight text-foreground">
+                        {coach.name}
+                      </h3>
+                      <p className="text-xs font-medium tracking-wide text-accent uppercase">
+                        {coach.tagline}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {coach.description}
+                      </p>
+                    </div>
+                    <span className="mt-auto flex items-center gap-1 text-sm font-medium text-accent">
+                      Inizia con {coach.name}
+                      <ArrowRight className="size-3.5" />
+                    </span>
+                  </CardContent>
+                </Card>
+              </Link>
             );
           })}
         </div>

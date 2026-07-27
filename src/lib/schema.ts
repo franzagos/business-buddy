@@ -272,4 +272,21 @@ export const advisorProfile = pgTable(
   },
   (table) => [index("advisor_profile_owner_user_id_idx").on(table.ownerUserId)]
 );
+
+export const businessProfile = pgTable("business_profile", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  // "executive" | "agency" | "startup" | "other" | null (not set).
+  // When it matches the active coach, that coach uses this business as the
+  // default worked example in exercises unless the user says otherwise.
+  businessType: text("business_type"),
+  context: text("context"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
 // =============================================================================

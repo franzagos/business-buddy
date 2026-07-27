@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { coachingSession, coachingMessage, realCase, advisorProfile } from "@/lib/schema";
 import { getCoach, isCoachId } from "@/lib/coaches";
 import { getModel } from "@/lib/ai/models";
+import { buildBusinessContext } from "@/lib/coaches/business-context";
 
 const paramsSchema = z.object({
   coachId: z.string().refine(isCoachId, { message: "Unknown coach" }),
@@ -121,10 +122,11 @@ ${advisorBriefs}`;
   });
 
   const advisorNames = [...selectedStatic, ...selectedDb].map((a) => a.name);
+  const businessContext = await buildBusinessContext(session.user.id, coachId);
 
   const result = streamText({
     model: getModel("board"),
-    system: consultSystemPrompt,
+    system: `${consultSystemPrompt}${businessContext}`,
     messages: [
       ...priorMessages
         .filter((m) => !m.content.startsWith(BOARD_MESSAGE_PREFIX))
