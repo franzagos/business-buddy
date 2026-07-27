@@ -95,13 +95,13 @@ All list queries use `.limit(50)` and paginate by `updatedAt desc` / `createdAt 
 Seeded once via a migration/seed script: an `advisor_profile` row with `isShared = true`, owned by the account matching an `OWNER_EMAIL` env var (defaults to the app owner's account created on first deploy). Content ported from `Franz-Consulente.md` + `Cosa Pensa Franz.md`. If that owner account doesn't exist yet at seed time, the seed is a no-op and can be re-run later (`pnpm run db:seed`, added as a new script).
 
 ## AI models (OpenRouter, via `src/lib/ai/models.ts`)
-Different tasks get different models, each overridable by its own env var so cost/quality can be tuned later without code changes:
+Different tasks get different models, each overridable by its own env var so cost/quality can be tuned later without code changes. **Cost discipline is a hard requirement** (target: well under $0.03/session) — all four functions default to the same cheap model, GPT-4.1 Mini ($0.15/$0.60 per M input/output tokens), rather than a frontier model like Claude Sonnet 4.5 ($3/$15 per M — the original default, which was landing around $0.05-0.10/session in testing):
 
 | Function | Env var | Default | Why |
 |---|---|---|---|
-| Coach chat (training + consulting turns) | `OPENROUTER_MODEL_CHAT` | `anthropic/claude-sonnet-4.5` | Long-context roleplay, nuanced critique, needs strong instruction-following for the style rules |
-| Advisory Board synthesis | `OPENROUTER_MODEL_BOARD` | `anthropic/claude-sonnet-4.5` | Same reasoning bar as chat; multi-persona synthesis needs strong judgment |
-| Memory extraction/summarization (end-of-session progress entry, open topics, blind-spot detection) | `OPENROUTER_MODEL_MEMORY` | `openai/gpt-4.1-mini` | Structured extraction from a transcript, cheaper, doesn't need frontier reasoning |
+| Coach chat (training + consulting turns) | `OPENROUTER_MODEL_CHAT` | `openai/gpt-4.1-mini` | Cheap enough to keep a multi-turn session well under budget; good enough instruction-following for the style rules. Bump to `anthropic/claude-haiku-4.5` ($1/$5 per M) only if quality on short sessions justifies the ~7x cost |
+| Advisory Board synthesis | `OPENROUTER_MODEL_BOARD` | `openai/gpt-4.1-mini` | Same cost reasoning as chat |
+| Memory extraction/summarization (end-of-session progress entry, open topics, blind-spot detection) | `OPENROUTER_MODEL_MEMORY` | `openai/gpt-4.1-mini` | Structured extraction from a transcript, doesn't need frontier reasoning |
 | Session title generation | `OPENROUTER_MODEL_TITLE` | `openai/gpt-4.1-mini` | Trivial task, minimize cost |
 
 `src/lib/ai/models.ts` exports one `getModel(fn: "chat" | "board" | "memory" | "title")` helper wrapping `createOpenRouter`, replacing ad-hoc model selection in each route.

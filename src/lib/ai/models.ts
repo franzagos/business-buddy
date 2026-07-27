@@ -17,9 +17,15 @@ const MODEL_ENV_VAR: Record<ModelFunction, string> = {
   title: "OPENROUTER_MODEL_TITLE",
 };
 
+// Kept cheap on purpose (target: well under $0.03/session). GPT-4.1 Mini
+// ($0.15/$0.60 per M tokens) vs. Claude Sonnet 4.5 ($3/$15 per M) — a
+// typical multi-turn coaching session on Sonnet was landing around
+// $0.05-0.10; on GPT-4.1 Mini the same session costs roughly $0.005-0.01.
+// Bump a single function back up via its env var override if quality ever
+// needs it more than cost discipline.
 const MODEL_DEFAULT: Record<ModelFunction, string> = {
-  chat: "anthropic/claude-sonnet-4.5",
-  board: "anthropic/claude-sonnet-4.5",
+  chat: "openai/gpt-4.1-mini",
+  board: "openai/gpt-4.1-mini",
   memory: "openai/gpt-4.1-mini",
   title: "openai/gpt-4.1-mini",
 };
