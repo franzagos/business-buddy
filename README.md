@@ -112,3 +112,4 @@ pnpm test:e2e         # Run Playwright end-to-end tests
 4. Use a managed Postgres instance in production — [Neon](https://neon.tech) has a free tier.
 
 MIT License
+# business-buddy
