@@ -62,7 +62,6 @@ export async function GET() {
       },
       auth: {
         secretConfigured: status.auth.secret,
-        googleOAuth: status.auth.google,
       },
       ai: {
         configured: status.ai.configured,

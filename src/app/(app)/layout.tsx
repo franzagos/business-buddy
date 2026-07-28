@@ -23,10 +23,14 @@ export default async function AppLayout({
     .orderBy(desc(coachingSession.updatedAt))
     .limit(5);
 
+  const isAdmin = Boolean(
+    process.env.OWNER_EMAIL && session.user.email === process.env.OWNER_EMAIL
+  );
+
   return (
     <div className="flex min-h-screen flex-col bg-background md:flex-row">
       <NavigationProgress />
-      <Sidebar recentSessions={recentSessions} />
+      <Sidebar recentSessions={recentSessions} isAdmin={isAdmin} />
       <main className="min-w-0 flex-1">{children}</main>
     </div>
   );

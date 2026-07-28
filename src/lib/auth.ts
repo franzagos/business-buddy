@@ -54,18 +54,6 @@ export const auth = betterAuth({
     },
   },
 
-  // Google OAuth (enabled when credentials are present)
-  socialProviders: {
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-      ? {
-          google: {
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          },
-        }
-      : {}),
-  },
-
   // Magic link + Email OTP (always registered; require Resend in production)
   plugins: [
     magicLink({

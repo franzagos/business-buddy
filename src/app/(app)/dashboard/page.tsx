@@ -12,6 +12,7 @@ import { ResumeTopicButton } from "@/components/chat/resume-topic-button";
 import { SessionScoreBadge } from "@/components/chat/session-score-badge";
 import type { CoachId } from "@/lib/coaches";
 import { DEFAULT_SESSION_TITLE } from "@/lib/copy";
+import { OnboardingModal } from "@/components/onboarding/onboarding-modal";
 
 export default async function AppHomePage() {
   const session = await requireAuth();
@@ -66,6 +67,7 @@ export default async function AppHomePage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-6 py-8">
+      <OnboardingModal />
       <div>
         <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">
           {firstName ? `Bentornato, ${firstName}` : "Bentornato"}

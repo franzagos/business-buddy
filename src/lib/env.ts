@@ -9,8 +9,6 @@ const serverEnvSchema = z.object({
   BETTER_AUTH_SECRET: z
     .string()
     .min(32, "BETTER_AUTH_SECRET must be at least 32 characters"),
-  GOOGLE_CLIENT_ID: z.string().optional(),
-  GOOGLE_CLIENT_SECRET: z.string().optional(),
   OPENROUTER_API_KEY: z.string().optional(),
   OPENROUTER_MODEL: z.string().default("openai/gpt-4.1-mini"),
   BLOB_READ_WRITE_TOKEN: z.string().optional(),
@@ -67,9 +65,6 @@ export function getSetupStatus() {
       secret: Boolean(
         process.env.BETTER_AUTH_SECRET &&
           process.env.BETTER_AUTH_SECRET !== "CHANGE-ME-generate-a-random-32-char-string"
-      ),
-      google: Boolean(
-        process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
       ),
     },
     ai: {

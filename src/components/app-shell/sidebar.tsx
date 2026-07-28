@@ -13,6 +13,8 @@ import {
   Home,
   ChevronsLeft,
   ChevronsRight,
+  ShieldCheck,
+  HelpCircle,
 } from "lucide-react";
 import { signOut, useSession } from "@/lib/auth-client";
 import { COACH_META_LIST } from "@/lib/coaches/meta";
@@ -34,7 +36,11 @@ export interface SidebarSessionSummary {
 
 interface SidebarProps {
   recentSessions?: SidebarSessionSummary[];
+  isAdmin?: boolean;
 }
+
+const ONBOARDING_STORAGE_KEY = "bb-onboarding-seen";
+const ONBOARDING_REOPEN_EVENT = "bb:reopen-onboarding";
 
 const COLLAPSE_STORAGE_KEY = "bb-sidebar-collapsed";
 
@@ -90,6 +96,7 @@ function RailTooltip({
 
 function SidebarContent({
   recentSessions = [],
+  isAdmin = false,
   collapsed = false,
 }: SidebarProps & { collapsed?: boolean }) {
   const pathname = usePathname();
@@ -100,6 +107,20 @@ function SidebarContent({
     await signOut();
     router.push("/");
     router.refresh();
+  }
+
+  function handleReopenOnboarding() {
+    try {
+      window.localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+    if (pathname === "/dashboard") {
+      window.dispatchEvent(new Event(ONBOARDING_REOPEN_EVENT));
+    } else {
+      router.push("/dashboard");
+      router.refresh();
+    }
   }
 
   // "Progress" follows whichever coach the user is currently looking at
@@ -274,6 +295,39 @@ function SidebarContent({
           </Link>
         </RailTooltip>
 
+        <RailTooltip label="Guida" active={collapsed}>
+          <button
+            type="button"
+            onClick={handleReopenOnboarding}
+            className={cn(
+              linkBase,
+              linkPad,
+              "text-left text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            )}
+          >
+            <HelpCircle className="size-4 shrink-0" />
+            {!collapsed && "Guida"}
+          </button>
+        </RailTooltip>
+
+        {isAdmin && (
+          <RailTooltip label="Admin" active={collapsed}>
+            <Link
+              href="/admin"
+              className={cn(
+                linkBase,
+                linkPad,
+                pathname === "/admin"
+                  ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+                  : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              )}
+            >
+              <ShieldCheck className="size-4 shrink-0" />
+              {!collapsed && "Admin"}
+            </Link>
+          </RailTooltip>
+        )}
+
         {collapsed ? (
           <RailTooltip label="Tema" active={collapsed}>
             <div className="flex justify-center py-1">
@@ -311,7 +365,7 @@ function SidebarContent({
   );
 }
 
-export function Sidebar({ recentSessions = [] }: SidebarProps) {
+export function Sidebar({ recentSessions = [], isAdmin = false }: SidebarProps) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -401,7 +455,7 @@ export function Sidebar({ recentSessions = [] }: SidebarProps) {
               </button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto">
-              <SidebarContent recentSessions={recentSessions} />
+              <SidebarContent recentSessions={recentSessions} isAdmin={isAdmin} />
             </div>
           </div>
         </div>
@@ -416,7 +470,11 @@ export function Sidebar({ recentSessions = [] }: SidebarProps) {
       >
         <div className="flex min-h-0 w-full flex-col">
           <div className="min-h-0 flex-1 overflow-y-auto">
-            <SidebarContent recentSessions={recentSessions} collapsed={collapsed} />
+            <SidebarContent
+              recentSessions={recentSessions}
+              isAdmin={isAdmin}
+              collapsed={collapsed}
+            />
           </div>
           {mounted && (
             <div className="border-t border-sidebar-border p-2">
