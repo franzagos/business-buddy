@@ -6,7 +6,7 @@ import { coachingSession } from "@/lib/schema";
 import { isCoachId } from "@/lib/coaches";
 
 const paramsSchema = z.object({
-  coachId: z.string().refine(isCoachId, { message: "Unknown coach" }),
+  coachId: z.string().refine(isCoachId, { message: "Coach sconosciuto" }),
   sessionId: z.string().uuid(),
 });
 

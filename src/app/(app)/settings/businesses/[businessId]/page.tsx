@@ -53,8 +53,8 @@ export default async function BusinessDetailPage({
           {record.name}
         </h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          Aggiorna le informazioni e gestisci la knowledge base di questo
-          business.
+          Aggiorna le informazioni e gestisci i documenti di riferimento di
+          questo business.
         </p>
       </div>
 
@@ -90,8 +90,8 @@ export default async function BusinessDetailPage({
               Elimina business
             </p>
             <p className="max-w-md text-sm text-muted-foreground">
-              Rimuove definitivamente questo business e tutti i documenti
-              della sua knowledge base.
+              Rimuove definitivamente questo business e tutti i suoi
+              documenti di riferimento.
             </p>
           </div>
           <DeleteBusinessButton businessId={record.id} />

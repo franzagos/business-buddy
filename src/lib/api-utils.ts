@@ -47,7 +47,7 @@ export async function getApiSession() {
 export async function requireApiAuth() {
   const session = await getApiSession();
   if (!session) {
-    return { session: null, error: apiError("Unauthorized", 401) };
+    return { session: null, error: apiError("Non autorizzato", 401) };
   }
   return { session, error: null };
 }
@@ -104,14 +104,14 @@ export async function parseBody<T>(
   try {
     body = await req.json();
   } catch {
-    return { data: null, error: apiError("Invalid JSON", 400) };
+    return { data: null, error: apiError("JSON non valido", 400) };
   }
 
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
     return {
       data: null,
-      error: apiError("Validation failed", 400, parsed.error.flatten().fieldErrors),
+      error: apiError("Dati non validi", 400, parsed.error.flatten().fieldErrors),
     };
   }
 

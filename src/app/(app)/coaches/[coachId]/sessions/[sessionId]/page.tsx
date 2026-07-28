@@ -1,12 +1,16 @@
 import { asc, eq, or } from "drizzle-orm";
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Building2 } from "lucide-react";
 import { requireAuth } from "@/lib/session";
 import { db } from "@/lib/db";
 import { coachingSession, coachingMessage, advisorProfile } from "@/lib/schema";
 import { getCoach, isCoachId } from "@/lib/coaches";
+import { findMatchingBusiness } from "@/lib/coaches/business-context";
 import { COACH_META } from "@/lib/coaches/meta";
 import { ChatTranscript } from "@/components/chat/chat-transcript";
 import { SessionTitle } from "@/components/chat/session-title";
+import { Badge } from "@/components/ui/badge";
 
 export default async function ChatSessionPage({
   params,
@@ -51,6 +55,7 @@ export default async function ChatSessionPage({
 
   const meta = COACH_META[coachId];
   const coach = getCoach(coachId);
+  const matchingBusiness = await findMatchingBusiness(session.user.id, coachId);
 
   const dbAdvisors = await db
     .select({
@@ -78,9 +83,22 @@ export default async function ChatSessionPage({
   return (
     <div className="flex h-screen min-h-0 flex-col">
       <header className="border-b border-border px-6 py-4">
-        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          {meta.name}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            {meta.name}
+          </p>
+          {matchingBusiness && (
+            <Link href={`/settings/businesses/${matchingBusiness.id}`}>
+              <Badge
+                variant="secondary"
+                className="gap-1 transition-colors ease-[var(--ease-snap)] duration-150 hover:bg-secondary/70"
+              >
+                <Building2 className="size-3" />
+                Contesto: {matchingBusiness.name}
+              </Badge>
+            </Link>
+          )}
+        </div>
         <SessionTitle
           coachId={coachId}
           sessionId={sessionId}

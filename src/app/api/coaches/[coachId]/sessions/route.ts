@@ -4,9 +4,17 @@ import { apiResponse, apiError, requireApiAuth } from "@/lib/api-utils";
 import { db } from "@/lib/db";
 import { coachingSession, coachingMessage } from "@/lib/schema";
 import { getCoach, isCoachId } from "@/lib/coaches";
+import {
+  TRAINING_OPENING_MESSAGE,
+  CONSULTING_OPENING_MESSAGE,
+} from "@/lib/coaches/shared/track-openings";
 
 const paramsSchema = z.object({
-  coachId: z.string().refine(isCoachId, { message: "Unknown coach" }),
+  coachId: z.string().refine(isCoachId, { message: "Coach sconosciuto" }),
+});
+
+const bodySchema = z.object({
+  track: z.enum(["training", "consulting"]).optional(),
 });
 
 /** GET — list the current user's sessions for this coach. */
@@ -19,7 +27,7 @@ export async function GET(
 
   const parsed = paramsSchema.safeParse(await params);
   if (!parsed.success) {
-    return apiError("Unknown coach", 404);
+    return apiError("Coach sconosciuto", 404);
   }
   const { coachId } = parsed.data;
 
@@ -55,23 +63,49 @@ export async function POST(
 
   const parsed = paramsSchema.safeParse(await params);
   if (!parsed.success) {
-    return apiError("Unknown coach", 404);
+    return apiError("Coach sconosciuto", 404);
   }
   const { coachId } = parsed.data;
   const coach = getCoach(coachId);
+
+  // Body is optional — the generic "Nuova sessione" flow (dashboard, quick
+  // signup redirect) sends no body at all, keeping today's behavior exactly.
+  let track: "training" | "consulting" | undefined;
+  const rawBody = await req.text();
+  if (rawBody) {
+    let parsedBody: unknown;
+    try {
+      parsedBody = JSON.parse(rawBody);
+    } catch {
+      return apiError("JSON non valido", 400);
+    }
+    const bodyParsed = bodySchema.safeParse(parsedBody);
+    if (!bodyParsed.success) {
+      return apiError("Dati non validi", 400, bodyParsed.error.flatten().fieldErrors);
+    }
+    track = bodyParsed.data.track;
+  }
 
   const [newSession] = await db
     .insert(coachingSession)
     .values({
       userId: session.user.id,
       coachId,
+      track: track ?? null,
     })
     .returning();
+
+  const openingMessage =
+    track === "training"
+      ? TRAINING_OPENING_MESSAGE
+      : track === "consulting"
+        ? CONSULTING_OPENING_MESSAGE
+        : coach.welcomeMessage;
 
   await db.insert(coachingMessage).values({
     sessionId: newSession.id,
     role: "assistant",
-    content: coach.welcomeMessage,
+    content: openingMessage,
   });
 
   return apiResponse({ session: newSession }, 201);

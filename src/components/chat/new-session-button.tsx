@@ -6,15 +6,21 @@ import { Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { CoachId } from "@/lib/coaches";
+import type { SessionTrack } from "@/lib/coaches/track";
+import { DEFAULT_SESSION_TITLE } from "@/lib/copy";
 
 interface NewSessionButtonProps {
   coachId: CoachId;
   variant?: "default" | "accent" | "outline";
+  track?: SessionTrack;
+  label?: string;
 }
 
 export function NewSessionButton({
   coachId,
   variant = "default",
+  track,
+  label = DEFAULT_SESSION_TITLE,
 }: NewSessionButtonProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -24,6 +30,8 @@ export function NewSessionButton({
     try {
       const res = await fetch(`/api/coaches/${coachId}/sessions`, {
         method: "POST",
+        headers: track ? { "Content-Type": "application/json" } : undefined,
+        body: track ? JSON.stringify({ track }) : undefined,
       });
       if (!res.ok) {
         toast.error("Non sono riuscito a creare la sessione. Riprova.");
@@ -45,7 +53,7 @@ export function NewSessionButton({
       ) : (
         <Sparkles className="size-4" />
       )}
-      Nuova sessione
+      {label}
     </Button>
   );
 }

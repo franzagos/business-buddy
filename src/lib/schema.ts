@@ -196,9 +196,18 @@ export const openTopic = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     coachId: text("coach_id").notNull(),
+    // The session this topic was extracted from — lets the UI link back to
+    // the conversation it came from. Nullable: topics created before this
+    // column existed have no session to link to.
+    sessionId: uuid("session_id").references(() => coachingSession.id, {
+      onDelete: "set null",
+    }),
     topic: text("topic").notNull(),
     reason: text("reason"),
     howToTest: text("how_to_test"),
+    // User's own self-assessed competence on this topic, 1-10. Distinct from
+    // the coach's rubric scores — this is a self-rating, not AI-generated.
+    competenceRating: integer("competence_rating"),
     status: text("status").default("open").notNull(),
     closedAt: timestamp("closed_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -206,6 +215,7 @@ export const openTopic = pgTable(
   (table) => [
     index("open_topic_user_id_idx").on(table.userId),
     index("open_topic_coach_id_idx").on(table.coachId),
+    index("open_topic_session_id_idx").on(table.sessionId),
   ]
 );
 

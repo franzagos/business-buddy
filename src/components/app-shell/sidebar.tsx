@@ -11,11 +11,20 @@ import {
   User,
   UserCircle2,
   Home,
-  Briefcase,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import { signOut, useSession } from "@/lib/auth-client";
 import { COACH_META_LIST } from "@/lib/coaches/meta";
+import { TRACK_META, type TrackSlug } from "@/lib/coaches/track";
 import { cn } from "@/lib/utils";
+import { DEFAULT_SESSION_TITLE } from "@/lib/copy";
+import { ThemeToggle } from "@/components/app-shell/theme-toggle";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export interface SidebarSessionSummary {
   id: string;
@@ -27,7 +36,62 @@ interface SidebarProps {
   recentSessions?: SidebarSessionSummary[];
 }
 
-function SidebarContent({ recentSessions = [] }: SidebarProps) {
+const COLLAPSE_STORAGE_KEY = "bb-sidebar-collapsed";
+
+/** Desktop-only collapsed/expanded state, persisted in localStorage. Same
+ * one-time-read-on-mount pattern as `useCoachmark`. */
+function useSidebarCollapsed() {
+  const [collapsed, setCollapsed] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync from localStorage on mount
+      setCollapsed(window.localStorage.getItem(COLLAPSE_STORAGE_KEY) === "1");
+    } catch {
+      // localStorage unavailable — keep expanded.
+    }
+    setMounted(true);
+  }, []);
+
+  function toggle() {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(COLLAPSE_STORAGE_KEY, next ? "1" : "0");
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }
+
+  return { collapsed: mounted && collapsed, toggle, mounted };
+}
+
+/** Wraps its child in a tooltip only when `active` (rail/collapsed mode). */
+function RailTooltip({
+  label,
+  active,
+  children,
+}: {
+  label: string;
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  if (!active) return <>{children}</>;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+function SidebarContent({
+  recentSessions = [],
+  collapsed = false,
+}: SidebarProps & { collapsed?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
@@ -38,58 +102,119 @@ function SidebarContent({ recentSessions = [] }: SidebarProps) {
     router.refresh();
   }
 
+  // "Progress" follows whichever coach the user is currently looking at
+  // (/coaches/{id}/...), instead of always pointing at the first coach —
+  // otherwise clicking it from another coach's page silently jumps you
+  // to a different coach's data.
+  const activeCoachMatch = pathname?.match(/^\/coaches\/([^/]+)/);
+  const progressCoachId = activeCoachMatch?.[1] ?? COACH_META_LIST[0].id;
+  const progressHref = `/coaches/${progressCoachId}/progress`;
+
+  const linkBase =
+    "flex items-center gap-2.5 rounded-sm py-2 text-sm transition-colors ease-[var(--ease-snap)] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring";
+  const linkPad = collapsed ? "justify-center px-2" : "px-2.5";
+
   return (
-    <div className="flex h-full flex-col gap-6 px-3 py-6 text-sidebar-foreground">
-      <Link href="/dashboard" className="flex items-center gap-2 px-3">
-        <span className="font-display text-lg font-semibold tracking-tight text-sidebar-foreground">
-          Business Buddy
-        </span>
+    <div
+      className={cn(
+        "flex h-full flex-col gap-6 py-6 text-sidebar-foreground",
+        collapsed ? "px-2" : "px-3"
+      )}
+    >
+      <Link
+        href="/dashboard"
+        className={cn(
+          "flex items-center gap-2",
+          collapsed ? "justify-center px-0" : "px-3"
+        )}
+      >
+        {collapsed ? (
+          <span className="font-display text-lg font-semibold tracking-tight text-sidebar-foreground">
+            BB
+          </span>
+        ) : (
+          <span className="font-display text-lg font-semibold tracking-tight text-sidebar-foreground">
+            Business Buddy
+          </span>
+        )}
       </Link>
 
       <nav className="flex flex-col gap-1">
-        <Link
-          href="/dashboard"
-          className={cn(
-            "flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-sm transition-colors ease-[var(--ease-snap)] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-            pathname === "/dashboard"
-              ? "bg-sidebar-accent text-sidebar-foreground font-medium"
-              : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-          )}
-        >
-          <Home className="size-4" />
-          Home
-        </Link>
+        <RailTooltip label="Home" active={collapsed}>
+          <Link
+            href="/dashboard"
+            className={cn(
+              linkBase,
+              linkPad,
+              pathname === "/dashboard"
+                ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+                : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            )}
+          >
+            <Home className="size-4 shrink-0" />
+            {!collapsed && "Home"}
+          </Link>
+        </RailTooltip>
       </nav>
 
       <nav className="flex flex-col gap-1">
-        <p className="px-3 pb-1 text-xs font-medium tracking-wide text-sidebar-foreground/60 uppercase">
-          Coaches
-        </p>
+        {!collapsed && (
+          <p className="px-3 pb-1 text-xs font-medium tracking-wide text-sidebar-foreground/60 uppercase">
+            Coaches
+          </p>
+        )}
         {COACH_META_LIST.map((coach) => {
           const href = `/coaches/${coach.id}`;
           const active = pathname === href || pathname?.startsWith(`${href}/`);
           const Icon = coach.icon;
+          const trackSlugs: TrackSlug[] = ["training", "coaching"];
           return (
-            <Link
-              key={coach.id}
-              href={href}
-              className={cn(
-                "flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-sm transition-colors ease-[var(--ease-snap)] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-                active
-                  ? "bg-sidebar-accent text-sidebar-foreground font-medium"
-                  : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            <div key={coach.id} className="flex flex-col gap-0.5">
+              <RailTooltip label={coach.name} active={collapsed}>
+                <Link
+                  href={href}
+                  className={cn(
+                    linkBase,
+                    linkPad,
+                    active
+                      ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+                      : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                  )}
+                >
+                  <span className="flex size-7 shrink-0 items-center justify-center rounded-sm bg-sidebar-accent text-sidebar-primary">
+                    <Icon className="size-4" />
+                  </span>
+                  {!collapsed && coach.name}
+                </Link>
+              </RailTooltip>
+              {!collapsed && (
+                <div className="ml-9 flex flex-col gap-0.5">
+                  {trackSlugs.map((slug) => {
+                    const subHref = `${href}/${slug}`;
+                    const subActive = pathname === subHref || pathname?.startsWith(`${subHref}/`);
+                    return (
+                      <Link
+                        key={slug}
+                        href={subHref}
+                        className={cn(
+                          "truncate rounded-sm px-2.5 py-1.5 text-sm transition-colors ease-[var(--ease-snap)] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                          subActive
+                            ? "bg-sidebar-accent text-sidebar-foreground"
+                            : "text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                        )}
+                      >
+                        {TRACK_META[slug].label}
+                      </Link>
+                    );
+                  })}
+                </div>
               )}
-            >
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-sm bg-sidebar-accent text-sidebar-primary">
-                <Icon className="size-4" />
-              </span>
-              {coach.name}
-            </Link>
+            </div>
           );
         })}
       </nav>
 
-      {recentSessions.length > 0 && (
+      {!collapsed && recentSessions.length > 0 && (
         <div className="flex flex-col gap-1">
           <p className="px-3 pb-1 text-xs font-medium tracking-wide text-sidebar-foreground/60 uppercase">
             Recenti
@@ -105,70 +230,82 @@ function SidebarContent({ recentSessions = [] }: SidebarProps) {
                   : "text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground"
               )}
             >
-              {s.title || "Nuova sessione"}
+              {s.title || DEFAULT_SESSION_TITLE}
             </Link>
           ))}
         </div>
       )}
 
       <div className="mt-auto flex flex-col gap-1 border-t border-sidebar-border pt-3">
-        <p className="px-3 pb-1 text-xs font-medium tracking-wide text-sidebar-foreground/60 uppercase">
-          Account
-        </p>
-        <Link
-          href={`/coaches/${COACH_META_LIST[0].id}/progress`}
-          className={cn(
-            "flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-sm transition-colors ease-[var(--ease-snap)] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-            pathname?.endsWith("/progress")
-              ? "bg-sidebar-accent text-sidebar-foreground font-medium"
-              : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-          )}
-        >
-          <LineChart className="size-4" />
-          Progress
-        </Link>
+        {!collapsed && (
+          <p className="px-3 pb-1 text-xs font-medium tracking-wide text-sidebar-foreground/60 uppercase">
+            Account
+          </p>
+        )}
+        <RailTooltip label="Progress" active={collapsed}>
+          <Link
+            href={progressHref}
+            className={cn(
+              linkBase,
+              linkPad,
+              pathname?.endsWith("/progress")
+                ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+                : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            )}
+          >
+            <LineChart className="size-4 shrink-0" />
+            {!collapsed && "Progress"}
+          </Link>
+        </RailTooltip>
 
-        <Link
-          href="/settings/advisor-profile"
-          className={cn(
-            "flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-sm transition-colors ease-[var(--ease-snap)] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-            pathname === "/settings/advisor-profile"
-              ? "bg-sidebar-accent text-sidebar-foreground font-medium"
-              : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-          )}
-        >
-          <UserCircle2 className="size-4" />
-          Profilo advisor
-        </Link>
+        <RailTooltip label="Il tuo profilo" active={collapsed}>
+          <Link
+            href="/settings/advisor-profile"
+            className={cn(
+              linkBase,
+              linkPad,
+              pathname?.startsWith("/settings/")
+                ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+                : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            )}
+          >
+            <UserCircle2 className="size-4 shrink-0" />
+            {!collapsed && "Il tuo profilo"}
+          </Link>
+        </RailTooltip>
 
-        <Link
-          href="/settings/businesses"
-          className={cn(
-            "flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-sm transition-colors ease-[var(--ease-snap)] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-            pathname === "/settings/businesses" ||
-              pathname?.startsWith("/settings/businesses/")
-              ? "bg-sidebar-accent text-sidebar-foreground font-medium"
-              : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-          )}
-        >
-          <Briefcase className="size-4" />
-          I tuoi business
-        </Link>
+        {collapsed ? (
+          <RailTooltip label="Tema" active={collapsed}>
+            <div className="flex justify-center py-1">
+              <ThemeToggle compact />
+            </div>
+          </RailTooltip>
+        ) : (
+          <ThemeToggle />
+        )}
 
-        <div className="flex items-center gap-2.5 truncate px-2.5 py-2 text-sm text-sidebar-foreground/75">
-          <User className="size-4 shrink-0" />
-          <span className="truncate">
-            {session?.user?.name || session?.user?.email || "Account"}
-          </span>
-        </div>
+        {!collapsed && (
+          <div className="flex items-center gap-2.5 truncate px-2.5 py-2 text-sm text-sidebar-foreground/75">
+            <User className="size-4 shrink-0" />
+            <span className="truncate">
+              {session?.user?.name || session?.user?.email || "Account"}
+            </span>
+          </div>
+        )}
 
-        <button
-          onClick={handleSignOut}
-          className="flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-left text-sm text-sidebar-foreground/75 outline-none transition-colors ease-[var(--ease-snap)] duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-        >
-          <LogOut className="size-4" />
-          Sign out
-        </button>
+        <RailTooltip label="Sign out" active={collapsed}>
+          <button
+            onClick={handleSignOut}
+            className={cn(
+              linkBase,
+              linkPad,
+              "text-left text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            )}
+          >
+            <LogOut className="size-4 shrink-0" />
+            {!collapsed && "Sign out"}
+          </button>
+        </RailTooltip>
       </div>
     </div>
   );
@@ -178,6 +315,7 @@ export function Sidebar({ recentSessions = [] }: SidebarProps) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const { collapsed, toggle, mounted } = useSidebarCollapsed();
 
   function closeDrawer() {
     setOpen(false);
@@ -238,7 +376,7 @@ export function Sidebar({ recentSessions = [] }: SidebarProps) {
         </button>
       </div>
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer (always expanded, unaffected by desktop collapse state) */}
       {open && (
         <div className="fixed inset-0 z-50 md:hidden">
           <button
@@ -270,9 +408,37 @@ export function Sidebar({ recentSessions = [] }: SidebarProps) {
       )}
 
       {/* Desktop sidebar */}
-      <aside className="hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar md:flex">
-        <div className="flex w-full flex-col">
-          <SidebarContent recentSessions={recentSessions} />
+      <aside
+        className={cn(
+          "hidden shrink-0 border-r border-sidebar-border bg-sidebar transition-[width] ease-[var(--ease-settle)] duration-200 md:flex",
+          collapsed ? "w-[68px]" : "w-64"
+        )}
+      >
+        <div className="flex min-h-0 w-full flex-col">
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <SidebarContent recentSessions={recentSessions} collapsed={collapsed} />
+          </div>
+          {mounted && (
+            <div className="border-t border-sidebar-border p-2">
+              <button
+                type="button"
+                onClick={toggle}
+                aria-label={collapsed ? "Espandi la barra laterale" : "Comprimi la barra laterale"}
+                className={cn(
+                  "flex w-full items-center justify-center gap-2 rounded-sm py-2 text-xs text-sidebar-foreground/70 outline-none transition-colors ease-[var(--ease-snap)] duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                )}
+              >
+                {collapsed ? (
+                  <ChevronsRight className="size-4" />
+                ) : (
+                  <>
+                    <ChevronsLeft className="size-4" />
+                    Comprimi
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </aside>
     </>

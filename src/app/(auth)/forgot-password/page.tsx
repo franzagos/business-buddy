@@ -24,7 +24,7 @@ export default function ForgotPasswordPage() {
       await (authClient as any).requestPasswordReset({ email, redirectTo: "/reset-password" });
       setSent(true);
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError("Qualcosa è andato storto. Riprova.");
     } finally {
       setLoading(false);
     }

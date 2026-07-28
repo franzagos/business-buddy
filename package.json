@@ -18,7 +18,9 @@
     "db:studio": "drizzle-kit studio",
     "db:dev": "drizzle-kit push",
     "db:reset": "drizzle-kit drop && drizzle-kit push",
-    "db:seed": "tsx scripts/seed-franz.ts",
+    "db:seed": "tsx --env-file=.env scripts/seed-franz.ts",
+    "db:backfill-tracks": "tsx --env-file=.env scripts/backfill-session-tracks.ts",
+    "db:backfill-progress": "tsx --env-file=.env scripts/backfill-progress-entries.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed"

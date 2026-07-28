@@ -41,6 +41,8 @@ export function AuthForm({ mode }: AuthFormProps) {
     try {
       const res = await fetch(`/api/coaches/${redirectCoach}/sessions`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ track: "training" }),
       });
       if (res.ok) {
         const { session: newSession } = await res.json();
@@ -64,19 +66,19 @@ export function AuthForm({ mode }: AuthFormProps) {
       if (isLogin) {
         const result = await signIn.email({ email, password });
         if (result.error) {
-          setError(result.error.message || "Invalid email or password");
+          setError(result.error.message || "Email o password non corrette");
           return;
         }
       } else {
         const result = await signUp.email({ email, password, name });
         if (result.error) {
-          setError(result.error.message || "Could not create account");
+          setError(result.error.message || "Non sono riuscito a creare l'account");
           return;
         }
       }
       await goToDestination();
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError("Qualcosa è andato storto. Riprova.");
     } finally {
       setLoading(false);
     }
@@ -90,7 +92,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         callbackURL: redirectCoach ? `/coaches/${redirectCoach}` : "/dashboard",
       });
     } catch {
-      setError("Google sign-in failed. Is it configured?");
+      setError("Accesso con Google non riuscito. Riprova più tardi.");
     }
   }
 
@@ -131,7 +133,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            placeholder="you@example.com"
+            placeholder="tu@esempio.com"
           />
         </div>
 

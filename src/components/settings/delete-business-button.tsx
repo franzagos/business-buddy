@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { deleteErrorMessage } from "@/lib/copy";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,14 +34,14 @@ export function DeleteBusinessButton({
         method: "DELETE",
       });
       if (!res.ok) {
-        toast.error("Non sono riuscito a eliminare il business.");
+        toast.error(deleteErrorMessage("il business"));
         return;
       }
       toast.success("Business eliminato.");
       router.push("/settings/businesses");
       router.refresh();
     } catch {
-      toast.error("Non sono riuscito a eliminare il business.");
+      toast.error(deleteErrorMessage("il business"));
     } finally {
       setDeleting(false);
       setOpen(false);
@@ -60,7 +61,7 @@ export function DeleteBusinessButton({
           <DialogTitle>Eliminare questo business?</DialogTitle>
           <DialogDescription>
             L&apos;azione non è reversibile. Verranno eliminati anche tutti
-            i documenti della knowledge base collegati.
+            i documenti di riferimento collegati.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

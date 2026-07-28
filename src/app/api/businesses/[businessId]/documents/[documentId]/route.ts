@@ -28,7 +28,7 @@ export async function DELETE(
   if (error) return error;
 
   const parsedParams = paramsSchema.safeParse(await params);
-  if (!parsedParams.success) return apiError("Not found", 404);
+  if (!parsedParams.success) return apiError("Non trovato", 404);
   const { businessId, documentId } = parsedParams.data;
 
   const [existing] = await db
@@ -48,7 +48,7 @@ export async function DELETE(
     .limit(1);
 
   if (!existing || existing.ownerUserId !== session.user.id) {
-    return apiError("Not found", 404);
+    return apiError("Non trovato", 404);
   }
 
   await deleteFile(existing.fileUrl).catch(() => undefined);

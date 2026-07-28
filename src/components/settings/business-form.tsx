@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
+import { saveErrorMessage } from "@/lib/copy";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -53,7 +54,7 @@ export function BusinessForm({
         }
       );
       if (!res.ok) {
-        toast.error("Non sono riuscito a salvare il business. Riprova.");
+        toast.error(saveErrorMessage("il business"));
         return;
       }
       toast.success("Business salvato.");
@@ -64,7 +65,7 @@ export function BusinessForm({
         router.refresh();
       }
     } catch {
-      toast.error("Non sono riuscito a salvare il business. Riprova.");
+      toast.error(saveErrorMessage("il business"));
     } finally {
       setSaving(false);
     }

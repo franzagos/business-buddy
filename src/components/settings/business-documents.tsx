@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, Loader2, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { deleteErrorMessage } from "@/lib/copy";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -84,14 +85,14 @@ export function BusinessDocuments({
         { method: "DELETE" }
       );
       if (!res.ok) {
-        toast.error("Non sono riuscito a eliminare il documento.");
+        toast.error(deleteErrorMessage("il documento"));
         return;
       }
       setDocuments((prev) => prev.filter((d) => d.id !== documentId));
       toast.success("Documento eliminato.");
       router.refresh();
     } catch {
-      toast.error("Non sono riuscito a eliminare il documento.");
+      toast.error(deleteErrorMessage("il documento"));
     } finally {
       setDeletingId(null);
       setPendingDeleteId(null);
@@ -103,7 +104,7 @@ export function BusinessDocuments({
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-foreground">
-            Documenti (KB)
+            Documenti di riferimento
           </p>
           <p className="text-xs text-muted-foreground">
             File .txt o .md — usati come riferimento dai coach (max 5).
@@ -186,7 +187,7 @@ export function BusinessDocuments({
             <DialogTitle>Eliminare il documento?</DialogTitle>
             <DialogDescription>
               L&apos;azione non è reversibile. Il file verrà rimosso
-              definitivamente dalla knowledge base.
+              definitivamente.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

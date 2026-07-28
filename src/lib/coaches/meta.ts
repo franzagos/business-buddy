@@ -18,7 +18,7 @@ export const COACH_META: Record<CoachId, CoachMeta> = {
   executive: {
     id: "executive",
     name: "Executive Coach",
-    tagline: "Wartime CEO + crescita",
+    tagline: "Crisi, cassa, persone",
     description:
       "Ti allena con casi estremi da wartime CEO e da tempo di pace, poi mette il tuo piano davanti a un Advisory Board di pareri diversi per trovare i punti ciechi prima che te li trovi la realtà.",
     icon: Briefcase,
@@ -26,7 +26,7 @@ export const COACH_META: Record<CoachId, CoachMeta> = {
   agency: {
     id: "agency",
     name: "Agency Coach",
-    tagline: "Il mestiere delle agenzie",
+    tagline: "Clienti, team, margini",
     description:
       "Utilization, scope creep, cliente-ancora, churn del team: ti allena su casi concreti e confronta il tuo piano con più prospettive prima che tu lo metta in pratica.",
     icon: Megaphone,
@@ -34,7 +34,7 @@ export const COACH_META: Record<CoachId, CoachMeta> = {
   startup: {
     id: "startup",
     name: "Startup Coach",
-    tagline: "Dal foglio bianco alla crescita",
+    tagline: "Runway, prodotto, investitori",
     description:
       "Runway, investitori, cap table, prime assunzioni: ti allena a decidere sotto pressione e ti mette a confronto con pareri diversi prima di ogni mossa che conta.",
     icon: Rocket,

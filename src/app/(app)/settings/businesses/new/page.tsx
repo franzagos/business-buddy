@@ -12,8 +12,8 @@ export default async function NewBusinessPage() {
           Nuovo business
         </h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          Descrivi la tua attività. Potrai aggiungere documenti alla
-          knowledge base dopo averla creata.
+          Descrivi la tua attività. Potrai aggiungere documenti di
+          riferimento dopo averla creata.
         </p>
       </div>
 

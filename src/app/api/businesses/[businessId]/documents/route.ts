@@ -36,13 +36,13 @@ export async function GET(
   if (error) return error;
 
   const parsedParams = paramsSchema.safeParse(await params);
-  if (!parsedParams.success) return apiError("Not found", 404);
+  if (!parsedParams.success) return apiError("Non trovato", 404);
 
   const owned = await getOwnedBusiness(
     parsedParams.data.businessId,
     session.user.id
   );
-  if (!owned) return apiError("Not found", 404);
+  if (!owned) return apiError("Non trovato", 404);
 
   const documents = await db
     .select({
@@ -73,13 +73,13 @@ export async function POST(
   if (error) return error;
 
   const parsedParams = paramsSchema.safeParse(await params);
-  if (!parsedParams.success) return apiError("Not found", 404);
+  if (!parsedParams.success) return apiError("Non trovato", 404);
 
   const owned = await getOwnedBusiness(
     parsedParams.data.businessId,
     session.user.id
   );
-  if (!owned) return apiError("Not found", 404);
+  if (!owned) return apiError("Non trovato", 404);
 
   const existingCount = await db
     .select({ id: businessDocument.id })
@@ -98,12 +98,12 @@ export async function POST(
   try {
     formData = await req.formData();
   } catch {
-    return apiError("Invalid form data", 400);
+    return apiError("Dati del modulo non validi", 400);
   }
 
   const file = formData.get("file");
   if (!(file instanceof File)) {
-    return apiError("Missing file", 400);
+    return apiError("File mancante", 400);
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());

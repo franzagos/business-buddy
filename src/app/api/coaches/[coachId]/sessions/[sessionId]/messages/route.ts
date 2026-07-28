@@ -18,33 +18,20 @@ import {
 } from "@/lib/schema";
 import { getCoach, isCoachId } from "@/lib/coaches";
 import { getModel } from "@/lib/ai/models";
-import { maybeExtractMemory } from "@/lib/coaches/memory";
 import { buildBusinessContext } from "@/lib/coaches/business-context";
+import {
+  TRAINING_SYSTEM_HINT,
+  CONSULTING_SYSTEM_HINT,
+} from "@/lib/coaches/shared/track-openings";
 
 const paramsSchema = z.object({
-  coachId: z.string().refine(isCoachId, { message: "Unknown coach" }),
+  coachId: z.string().refine(isCoachId, { message: "Coach sconosciuto" }),
   sessionId: z.string().uuid(),
 });
 
 const bodySchema = z.object({
   content: z.string().trim().min(1).max(20000),
 });
-
-const WRAP_UP_KEYWORDS = [
-  "salviamo",
-  "chiudiamo",
-  "abbiamo finito",
-  "salva",
-  "save",
-  "let's wrap up",
-  "wrap up",
-  "let's save",
-];
-
-function looksLikeWrapUp(content: string): boolean {
-  const normalized = content.toLowerCase();
-  return WRAP_UP_KEYWORDS.some((keyword) => normalized.includes(keyword));
-}
 
 /** Build the structured memory context appended to the coach's system prompt. */
 async function buildMemoryContext(
@@ -150,7 +137,7 @@ export async function POST(
 
   const parsedParams = paramsSchema.safeParse(await params);
   if (!parsedParams.success) {
-    return apiError("Not found", 404);
+    return apiError("Non trovato", 404);
   }
   const { coachId, sessionId } = parsedParams.data;
 
@@ -163,6 +150,7 @@ export async function POST(
       userId: coachingSession.userId,
       coachId: coachingSession.coachId,
       title: coachingSession.title,
+      track: coachingSession.track,
     })
     .from(coachingSession)
     .where(eq(coachingSession.id, sessionId))
@@ -173,7 +161,7 @@ export async function POST(
     existingSession.userId !== session.user.id ||
     existingSession.coachId !== coachId
   ) {
-    return apiError("Not found", 404);
+    return apiError("Non trovato", 404);
   }
 
   const isFirstUserMessage = existingSession.title === null;
@@ -183,6 +171,12 @@ export async function POST(
     buildMemoryContext(session.user.id, coachId),
     buildBusinessContext(session.user.id, coachId),
   ]);
+  const trackHint =
+    existingSession.track === "training"
+      ? TRAINING_SYSTEM_HINT
+      : existingSession.track === "consulting"
+        ? CONSULTING_SYSTEM_HINT
+        : "";
 
   const [priorMessages] = await Promise.all([
     db
@@ -207,13 +201,13 @@ export async function POST(
     void generateTitle(sessionId, data.content);
   }
 
-  if (looksLikeWrapUp(data.content)) {
-    void maybeExtractMemory(sessionId);
-  }
+  // Wrap-up detection now lives client-side (chat-transcript.tsx), which
+  // triggers the same visible "end session" flow (recap dialog included)
+  // instead of a silent save the user never sees.
 
   const result = streamText({
     model: getModel("chat"),
-    system: `${coach.systemPrompt}${memoryContext}${businessContext}`,
+    system: `${coach.systemPrompt}${memoryContext}${businessContext}${trackHint}`,
     messages: [
       ...priorMessages.map((m) => ({
         role: m.role as "user" | "assistant",

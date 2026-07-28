@@ -1,15 +1,17 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import Link from "next/link";
 import { ArrowRight, Compass, MessagesSquare, Sparkles } from "lucide-react";
 import { requireAuth } from "@/lib/session";
 import { db } from "@/lib/db";
-import { coachingSession, openTopic } from "@/lib/schema";
+import { coachingSession, openTopic, progressEntry } from "@/lib/schema";
 import { COACH_META_LIST } from "@/lib/coaches/meta";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { NewSessionButton } from "@/components/chat/new-session-button";
 import { ResumeTopicButton } from "@/components/chat/resume-topic-button";
+import { SessionScoreBadge } from "@/components/chat/session-score-badge";
 import type { CoachId } from "@/lib/coaches";
+import { DEFAULT_SESSION_TITLE } from "@/lib/copy";
 
 export default async function AppHomePage() {
   const session = await requireAuth();
@@ -32,6 +34,23 @@ export default async function AppHomePage() {
   }
 
   const hasAnySession = sessions.length > 0;
+
+  const recentSessionIds = sessions.slice(0, 8).map((s) => s.id);
+  const recentEntries =
+    recentSessionIds.length > 0
+      ? await db
+          .select({
+            sessionId: progressEntry.sessionId,
+            register: progressEntry.register,
+            scores: progressEntry.scores,
+          })
+          .from(progressEntry)
+          .where(inArray(progressEntry.sessionId, recentSessionIds))
+          .limit(50)
+      : [];
+  const entryBySession = new Map(
+    recentEntries.filter((e) => e.sessionId).map((e) => [e.sessionId as string, e])
+  );
   const firstName = session.user.name?.split(" ")[0] || "";
 
   const openTopics = await db
@@ -150,7 +169,7 @@ export default async function AppHomePage() {
                       </span>
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-foreground">
-                          {s.title || "Nuova sessione"}
+                          {s.title || DEFAULT_SESSION_TITLE}
                         </p>
                         <p className="font-mono text-xs text-muted-foreground">
                           {meta?.name ?? s.coachId} ·{" "}
@@ -162,12 +181,18 @@ export default async function AppHomePage() {
                         </p>
                       </div>
                     </div>
-                    <Button asChild variant="outline" size="sm">
-                      <Link href={`/coaches/${s.coachId}/sessions/${s.id}`}>
-                        <MessagesSquare className="size-4" />
-                        Apri
-                      </Link>
-                    </Button>
+                    <div className="flex shrink-0 items-center gap-3">
+                      <SessionScoreBadge
+                        scores={entryBySession.get(s.id)?.scores ?? null}
+                        register={entryBySession.get(s.id)?.register ?? null}
+                      />
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/coaches/${s.coachId}/sessions/${s.id}`}>
+                          <MessagesSquare className="size-4" />
+                          Apri
+                        </Link>
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               );

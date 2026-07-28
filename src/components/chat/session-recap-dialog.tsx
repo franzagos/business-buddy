@@ -10,10 +10,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { RubricIcon } from "@/components/ui/rubric-icon";
 
 export interface RecapScore {
   dimension: string;
   label: string;
+  icon?: string | null;
   score: number;
   note: string | null;
   delta: number | null;
@@ -54,7 +56,7 @@ export function SessionRecapDialog({
             Sessione conclusa
           </DialogTitle>
           <DialogDescription>
-            Ecco cosa è emerso e come te la sei cavata questa volta.
+            Ecco cosa è emerso e i punteggi di questa sessione.
           </DialogDescription>
         </DialogHeader>
 
@@ -78,7 +80,13 @@ export function SessionRecapDialog({
                   key={s.dimension}
                   className="flex items-center justify-between gap-3 text-sm"
                 >
-                  <span className="text-foreground">{s.label}</span>
+                  <span className="flex items-center gap-1.5 text-foreground">
+                    <RubricIcon
+                      icon={s.icon ?? undefined}
+                      className="size-3.5 text-muted-foreground"
+                    />
+                    {s.label}
+                  </span>
                   <span className="flex items-center gap-2 font-mono tabular-nums">
                     <span className="text-foreground">{s.score}/10</span>
                     {typeof s.delta === "number" && s.delta !== 0 && (

@@ -26,7 +26,8 @@ export default function Error({
             Qualcosa è andato storto
           </h2>
           <p className="text-sm text-muted-foreground">
-            {error.message || "Si è verificato un errore imprevisto."}
+            Si è verificato un errore imprevisto. Riprova, e se il problema
+            continua contattaci.
           </p>
         </div>
         <Button onClick={reset} variant="accent">

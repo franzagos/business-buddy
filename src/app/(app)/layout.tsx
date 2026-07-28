@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/session";
 import { db } from "@/lib/db";
 import { coachingSession } from "@/lib/schema";
 import { Sidebar } from "@/components/app-shell/sidebar";
+import { NavigationProgress } from "@/components/app-shell/navigation-progress";
 
 export default async function AppLayout({
   children,
@@ -24,6 +25,7 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-screen flex-col bg-background md:flex-row">
+      <NavigationProgress />
       <Sidebar recentSessions={recentSessions} />
       <main className="min-w-0 flex-1">{children}</main>
     </div>

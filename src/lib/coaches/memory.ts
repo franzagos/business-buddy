@@ -10,6 +10,7 @@ import {
   blindSpotPattern,
 } from "@/lib/schema";
 import { getModel } from "@/lib/ai/models";
+import { getCoach, isCoachId } from "@/lib/coaches";
 
 /**
  * Structured-extraction schema for the memory model's output. Every field is
@@ -56,22 +57,40 @@ const extractionSchema = z.object({
 
 type Extraction = z.infer<typeof extractionSchema>;
 
-const EXTRACTION_PROMPT = `Sei un modulo di estrazione strutturata per una piattaforma di coaching aziendale. Ricevi il transcript completo di una sessione di coaching tra un utente e un coach AI. Il tuo compito è estrarre in formato JSON, e solo JSON, senza testo aggiuntivo, senza markdown fences, i seguenti dati:
+/**
+ * Built per-coach so the model picks `dimension` from the coach's ACTUAL
+ * rubric ids (src/lib/coaches/*\/rubric.ts) instead of inventing its own
+ * kebab-case label — otherwise scores never match the rubric the UI reads
+ * from, and every dimension-based view (progress badges, personal
+ * analytics) silently has nothing to show.
+ */
+function buildExtractionPrompt(coachId: string): string {
+  const rubricList = isCoachId(coachId)
+    ? getCoach(coachId)
+        .rubric.map((r) => `- "${r.id}" — ${r.label}`)
+        .join("\n")
+    : "";
+
+  return `Sei un modulo di estrazione strutturata per una piattaforma di coaching aziendale. Ricevi il transcript completo di una sessione di coaching tra un utente e un coach AI. Il tuo compito è estrarre in formato JSON, e solo JSON, senza testo aggiuntivo, senza markdown fences, i seguenti dati:
 
 {
   "progressEntry": {
     "decision": "la decisione principale presa o discussa nella sessione, in una frase, oppure null se non c'è una decisione chiara",
     "lesson": "la lezione o l'insight principale emerso, oppure null",
     "register": "wartime oppure peacetime, in base al tono della sessione, oppure null",
-    "scores": [ { "dimension": "id della dimensione della rubrica più pertinente in kebab-case", "score": numero da 1 a 10, "note": "breve motivazione" } ],
+    "scores": [ { "dimension": "usa SOLO uno degli id esatti elencati sotto, mai un id inventato", "score": numero da 1 a 10, "note": "breve motivazione" } ],
     "blindSpots": [ { "label": "punto cieco individuato in questa sessione", "category": "categoria breve" } ]
   } oppure null se la sessione non contiene abbastanza contenuto per un progress entry,
   "openTopics": [ { "topic": "argomento rimasto aperto da approfondire in futuro", "reason": "perché è rilevante", "howToTest": "come verificarlo o affrontarlo" } ],
   "blindSpots": [ { "pattern": "descrizione sintetica e riutilizzabile di uno schema ricorrente di punto cieco, in modo che possa essere confrontato nel tempo con altre sessioni" } ]
 }
 
+Dimensioni valide per "scores.dimension" (usa esattamente questi id, non tradurli, non inventarne altri, ometti una dimensione se non è pertinente a questa sessione invece di forzarla):
+${rubricList}
+
 Se la sessione è troppo breve o non contiene contenuto sostanziale (es. solo il messaggio di benvenuto), rispondi con { "progressEntry": null, "openTopics": [], "blindSpots": [] }.
 Rispondi SOLO con il JSON, nessun altro testo.`;
+}
 
 function extractJson(raw: string): unknown | null {
   const trimmed = raw.trim();
@@ -132,7 +151,7 @@ export async function extractMemory(
 
     const { text } = await generateText({
       model: getModel("memory"),
-      system: EXTRACTION_PROMPT,
+      system: buildExtractionPrompt(sessionRow.coachId),
       prompt: transcript.slice(0, 24000),
     });
 
@@ -169,6 +188,7 @@ export async function extractMemory(
         extraction.openTopics.map((t) => ({
           userId,
           coachId,
+          sessionId,
           topic: t.topic,
           reason: t.reason ?? null,
           howToTest: t.howToTest ?? null,

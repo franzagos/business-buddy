@@ -7,7 +7,7 @@ import { getCoach, isCoachId } from "@/lib/coaches";
 import { extractMemory } from "@/lib/coaches/memory";
 
 const paramsSchema = z.object({
-  coachId: z.string().refine(isCoachId, { message: "Unknown coach" }),
+  coachId: z.string().refine(isCoachId, { message: "Coach sconosciuto" }),
   sessionId: z.string().uuid(),
 });
 
@@ -33,7 +33,7 @@ export async function POST(
 
   const parsed = paramsSchema.safeParse(await params);
   if (!parsed.success) {
-    return apiError("Not found", 404);
+    return apiError("Non trovato", 404);
   }
   const { coachId, sessionId } = parsed.data;
 
@@ -52,7 +52,7 @@ export async function POST(
     existingSession.userId !== session.user.id ||
     existingSession.coachId !== coachId
   ) {
-    return apiError("Not found", 404);
+    return apiError("Non trovato", 404);
   }
 
   const entry = await extractMemory(sessionId);
@@ -80,12 +80,15 @@ export async function POST(
   const rubric = getCoach(coachId).rubric;
   const labelFor = (dimension: string) =>
     rubric.find((r) => r.id === dimension)?.label ?? dimension;
+  const iconFor = (dimension: string) =>
+    rubric.find((r) => r.id === dimension)?.icon ?? null;
 
   const scores = currentScores.map((s) => {
     const prev = previousScores.find((p) => p.dimension === s.dimension);
     return {
       dimension: s.dimension,
       label: labelFor(s.dimension),
+      icon: iconFor(s.dimension),
       score: s.score,
       note: s.note ?? null,
       delta: prev ? s.score - prev.score : null,

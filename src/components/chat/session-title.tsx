@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Loader2 } from "lucide-react";
+import { DEFAULT_SESSION_TITLE } from "@/lib/copy";
 
 interface SessionTitleProps {
   coachId: string;
@@ -71,12 +72,12 @@ export function SessionTitle({ coachId, sessionId, initialTitle }: SessionTitleP
       type="button"
       onClick={startEditing}
       disabled={saving}
-      aria-label={`Rinomina sessione, titolo attuale: ${title || "Nuova sessione"}`}
+      aria-label={`Rinomina sessione, titolo attuale: ${title || DEFAULT_SESSION_TITLE}`}
       className="group flex items-center gap-2 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
       title="Rinomina sessione"
     >
       <h1 className="font-display text-lg font-semibold tracking-tight text-foreground">
-        {title || "Nuova sessione"}
+        {title || DEFAULT_SESSION_TITLE}
       </h1>
       {saving ? (
         <Loader2 className="size-3.5 shrink-0 animate-spin text-muted-foreground" />

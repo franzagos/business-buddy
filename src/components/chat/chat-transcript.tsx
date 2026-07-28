@@ -22,6 +22,8 @@ import {
   type SessionRecap,
 } from "@/components/chat/session-recap-dialog";
 import { Coachmark, useCoachmark } from "@/components/ui/coachmark";
+import { looksLikeWrapUp } from "@/lib/coaches/wrap-up";
+import { saveErrorMessage } from "@/lib/copy";
 
 const BOARD_MESSAGE_PREFIX = "[[board]]\n";
 
@@ -98,7 +100,7 @@ export function ChatTranscript({
     if (!res.ok) {
       if (res.status === 429) {
         throw new Error(
-          "Sessione di oggi conclusa. Anche il miglior coach non ti farebbe allenare 40 round di fila — ci si rivede domani."
+          "Hai raggiunto il limite di messaggi di oggi. Ci si rivede domani."
         );
       }
       if (res.status === 401) {
@@ -164,6 +166,12 @@ export function ChatTranscript({
         `/api/coaches/${coachId}/sessions/${sessionId}/messages`,
         { content }
       );
+      // If the user's message reads like "let's wrap up / save this", show
+      // the same recap the manual "End session" button gives — instead of
+      // saving progress silently in the background where nobody sees it.
+      if (looksLikeWrapUp(content)) {
+        void handleEndSession();
+      }
     } catch (err) {
       setError(
         err instanceof Error
@@ -191,7 +199,7 @@ export function ChatTranscript({
         { method: "POST" }
       );
       if (!res.ok) {
-        toast.error("Non sono riuscito a salvare i progressi. Riprova.");
+        toast.error(saveErrorMessage("i progressi"));
         return;
       }
       const data = (await res.json()) as { recap: SessionRecap | null };
@@ -205,7 +213,7 @@ export function ChatTranscript({
       }
       router.refresh();
     } catch {
-      toast.error("Non sono riuscito a salvare i progressi. Riprova.");
+      toast.error(saveErrorMessage("i progressi"));
     } finally {
       setIsEnding(false);
     }

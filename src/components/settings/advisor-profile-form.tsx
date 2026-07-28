@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
+import { saveErrorMessage } from "@/lib/copy";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,12 +30,12 @@ export function AdvisorProfileForm({
         body: JSON.stringify({ whatTheyThink, howTheyDecide }),
       });
       if (!res.ok) {
-        toast.error("Non sono riuscito a salvare il profilo. Riprova.");
+        toast.error(saveErrorMessage("il profilo"));
         return;
       }
       toast.success("Profilo salvato.");
     } catch {
-      toast.error("Non sono riuscito a salvare il profilo. Riprova.");
+      toast.error(saveErrorMessage("il profilo"));
     } finally {
       setSaving(false);
     }

@@ -34,7 +34,7 @@ export async function GET(
   if (error) return error;
 
   const parsedParams = paramsSchema.safeParse(await params);
-  if (!parsedParams.success) return apiError("Not found", 404);
+  if (!parsedParams.success) return apiError("Non trovato", 404);
 
   const [existing] = await db
     .select({
@@ -51,7 +51,7 @@ export async function GET(
     .limit(1);
 
   if (!existing || existing.ownerUserId !== session.user.id) {
-    return apiError("Not found", 404);
+    return apiError("Non trovato", 404);
   }
 
   const { ownerUserId: _omit, ...result } = existing;
@@ -70,7 +70,7 @@ export async function PATCH(
   if (error) return error;
 
   const parsedParams = paramsSchema.safeParse(await params);
-  if (!parsedParams.success) return apiError("Not found", 404);
+  if (!parsedParams.success) return apiError("Non trovato", 404);
 
   const { data, error: bodyError } = await parseBody(req, bodySchema);
   if (bodyError) return bodyError;
@@ -82,7 +82,7 @@ export async function PATCH(
     .limit(1);
 
   if (!existing || existing.ownerUserId !== session.user.id) {
-    return apiError("Not found", 404);
+    return apiError("Non trovato", 404);
   }
 
   const [updated] = await db
@@ -117,7 +117,7 @@ export async function DELETE(
   if (error) return error;
 
   const parsedParams = paramsSchema.safeParse(await params);
-  if (!parsedParams.success) return apiError("Not found", 404);
+  if (!parsedParams.success) return apiError("Non trovato", 404);
 
   const [existing] = await db
     .select({ id: business.id, ownerUserId: business.ownerUserId })
@@ -126,7 +126,7 @@ export async function DELETE(
     .limit(1);
 
   if (!existing || existing.ownerUserId !== session.user.id) {
-    return apiError("Not found", 404);
+    return apiError("Non trovato", 404);
   }
 
   const docs = await db

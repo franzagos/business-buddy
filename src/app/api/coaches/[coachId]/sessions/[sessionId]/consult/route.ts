@@ -9,7 +9,7 @@ import { getModel } from "@/lib/ai/models";
 import { buildBusinessContext } from "@/lib/coaches/business-context";
 
 const paramsSchema = z.object({
-  coachId: z.string().refine(isCoachId, { message: "Unknown coach" }),
+  coachId: z.string().refine(isCoachId, { message: "Coach sconosciuto" }),
   sessionId: z.string().uuid(),
 });
 
@@ -34,7 +34,7 @@ export async function POST(
 
   const parsedParams = paramsSchema.safeParse(await params);
   if (!parsedParams.success) {
-    return apiError("Not found", 404);
+    return apiError("Non trovato", 404);
   }
   const { coachId, sessionId } = parsedParams.data;
 
@@ -56,7 +56,7 @@ export async function POST(
     existingSession.userId !== session.user.id ||
     existingSession.coachId !== coachId
   ) {
-    return apiError("Not found", 404);
+    return apiError("Non trovato", 404);
   }
 
   const coach = getCoach(coachId);
@@ -83,7 +83,7 @@ export async function POST(
   const selectedDb = dbAdvisors.filter((a) => data.advisorIds.includes(a.id));
 
   if (selectedStatic.length === 0 && selectedDb.length === 0) {
-    return apiError("No valid advisors selected", 400);
+    return apiError("Nessun advisor valido selezionato", 400);
   }
 
   const advisorBriefs = [

@@ -1,6 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
-import { AlertTriangle, ListChecks, TrendingUp } from "lucide-react";
+import Link from "next/link";
+import { AlertTriangle, BookOpen, ListChecks, TrendingUp } from "lucide-react";
 import { requireAuth } from "@/lib/session";
 import { db } from "@/lib/db";
 import { progressEntry, openTopic, blindSpotPattern } from "@/lib/schema";
@@ -8,8 +9,15 @@ import { isCoachId, getCoach } from "@/lib/coaches";
 import { COACH_META } from "@/lib/coaches/meta";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { OpenTopicToggle } from "@/components/progress/open-topic-toggle";
+import { Button } from "@/components/ui/button";
+import { OpenTopicCard } from "@/components/progress/open-topic-card";
 import { ProgressPageCoachmark } from "@/components/progress/progress-page-coachmark";
+import { RubricIcon } from "@/components/ui/rubric-icon";
+import {
+  PersonalAnalytics,
+  type TrendPoint,
+  type DimensionStat,
+} from "@/components/progress/personal-analytics";
 
 interface Score {
   dimension: string;
@@ -31,11 +39,15 @@ export default async function ProgressPage({
   const rubricLabels = Object.fromEntries(
     coach.rubric.map((r) => [r.id, r.label])
   );
+  const rubricIcons = Object.fromEntries(
+    coach.rubric.map((r) => [r.id, r.icon])
+  );
 
   const [entries, topics, blindSpots] = await Promise.all([
     db
       .select({
         id: progressEntry.id,
+        sessionId: progressEntry.sessionId,
         decision: progressEntry.decision,
         lesson: progressEntry.lesson,
         register: progressEntry.register,
@@ -56,6 +68,9 @@ export default async function ProgressPage({
         id: openTopic.id,
         topic: openTopic.topic,
         reason: openTopic.reason,
+        howToTest: openTopic.howToTest,
+        sessionId: openTopic.sessionId,
+        competenceRating: openTopic.competenceRating,
         status: openTopic.status,
         createdAt: openTopic.createdAt,
       })
@@ -113,6 +128,46 @@ export default async function ProgressPage({
     return a.status === "open" ? -1 : 1;
   });
 
+  // ---- Personal analytics: aggregate the same data the lists below show. ----
+  const trend: TrendPoint[] = chronological
+    .map((entry) => {
+      const scores = scoresByEntryId.get(entry.id) ?? [];
+      if (scores.length === 0) return null;
+      const avg = scores.reduce((sum, s) => sum + s.score, 0) / scores.length;
+      return { entryId: entry.id, date: entry.createdAt.toISOString(), avgScore: avg };
+    })
+    .filter((p): p is TrendPoint => p !== null);
+
+  const overallAverage =
+    trend.length > 0
+      ? trend.reduce((sum, p) => sum + p.avgScore, 0) / trend.length
+      : null;
+
+  const scoresByDimension = new Map<string, number[]>();
+  for (const entry of chronological) {
+    for (const s of scoresByEntryId.get(entry.id) ?? []) {
+      const list = scoresByDimension.get(s.dimension) ?? [];
+      list.push(s.score);
+      scoresByDimension.set(s.dimension, list);
+    }
+  }
+  const dimensionStats: DimensionStat[] = coach.rubric
+    .map((r) => {
+      const scores = scoresByDimension.get(r.id) ?? [];
+      if (scores.length === 0) return null;
+      const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+      const trendDelta = scores.length >= 2 ? scores[scores.length - 1] - scores[0] : null;
+      return { id: r.id, label: r.label, icon: r.icon, avg, count: scores.length, trend: trendDelta };
+    })
+    .filter((d): d is DimensionStat => d !== null);
+
+  const activeBlindSpotsCount = blindSpots.filter((b) => b.occurrenceCount >= 3).length;
+  const openTopicsCount = topics.filter((t) => t.status === "open").length;
+
+  // Entries with a lesson, most recent first (already the query's order),
+  // each keeping its sessionId so the user can jump back to that specific case.
+  const lessons = entries.filter((e) => e.lesson);
+
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-6 py-8">
       <div className="space-y-1.5">
@@ -129,6 +184,17 @@ export default async function ProgressPage({
       </div>
 
       <ProgressPageCoachmark />
+
+      {entries.length > 0 && (
+        <PersonalAnalytics
+          sessionsEvaluated={entries.length}
+          overallAverage={overallAverage}
+          openTopicsCount={openTopicsCount}
+          activeBlindSpotsCount={activeBlindSpotsCount}
+          trend={trend}
+          dimensions={dimensionStats}
+        />
+      )}
 
       <section className="space-y-3">
         <h2 className="text-sm font-medium text-muted-foreground">
@@ -181,8 +247,12 @@ export default async function ProgressPage({
                             <Badge
                               key={s.dimension}
                               variant="secondary"
-                              className="font-mono"
+                              className="gap-1.5 font-mono"
                             >
+                              <RubricIcon
+                                icon={rubricIcons[s.dimension]}
+                                className="size-3"
+                              />
                               {label}: {s.score}/10
                               {typeof delta === "number" && delta !== 0 && (
                                 <span
@@ -223,25 +293,61 @@ export default async function ProgressPage({
         ) : (
           <div className="space-y-2">
             {openTopicsFirst.map((t) => (
-              <Card key={t.id} className="p-4">
-                <CardContent className="flex items-center justify-between gap-4 p-0">
-                  <div className="min-w-0 space-y-0.5">
-                    <p
-                      className={
-                        t.status === "closed"
-                          ? "truncate text-sm text-muted-foreground line-through"
-                          : "truncate text-sm font-medium text-foreground"
-                      }
-                    >
-                      {t.topic}
+              <OpenTopicCard
+                key={t.id}
+                id={t.id}
+                coachId={coachId}
+                topic={t.topic}
+                reason={t.reason}
+                howToTest={t.howToTest}
+                sessionId={t.sessionId}
+                status={t.status as "open" | "closed"}
+                competenceRating={t.competenceRating}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-sm font-medium text-muted-foreground">
+          Lezioni apprese
+        </h2>
+        {lessons.length === 0 ? (
+          <EmptyState
+            icon={<BookOpen className="size-5" />}
+            title="Nessuna lezione ancora"
+            description="Le lezioni chiave emerse a fine sessione compariranno qui, con un riferimento al caso specifico."
+          />
+        ) : (
+          <div className="space-y-2">
+            {lessons.map((entry) => (
+              <Card key={entry.id} className="p-4">
+                <CardContent className="space-y-2 p-0">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-mono text-xs text-muted-foreground">
+                      {entry.createdAt.toLocaleDateString("it-IT", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}
                     </p>
-                    {t.reason && (
-                      <p className="truncate text-xs text-muted-foreground">
-                        {t.reason}
-                      </p>
+                    {entry.sessionId && (
+                      <Button asChild variant="ghost" size="sm">
+                        <Link href={`/coaches/${coachId}/sessions/${entry.sessionId}`}>
+                          Apri il caso
+                        </Link>
+                      </Button>
                     )}
                   </div>
-                  <OpenTopicToggle id={t.id} status={t.status as "open" | "closed"} />
+                  <p className="text-sm font-medium text-foreground">
+                    {entry.lesson}
+                  </p>
+                  {entry.decision && (
+                    <p className="text-xs text-muted-foreground">
+                      Caso: {entry.decision}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             ))}
