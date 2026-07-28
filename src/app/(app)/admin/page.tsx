@@ -1,6 +1,7 @@
 import { count, countDistinct, desc, eq, gte, max } from "drizzle-orm";
 import { notFound } from "next/navigation";
-import { ShieldCheck, Users, MessagesSquare, Activity } from "lucide-react";
+import Link from "next/link";
+import { ShieldCheck, Users, MessagesSquare, Activity, Users2 } from "lucide-react";
 import { requireAuth } from "@/lib/session";
 import { db } from "@/lib/db";
 import { user, coachingSession, coachingMessage } from "@/lib/schema";
@@ -9,6 +10,7 @@ import { TRACK_DB_TO_SLUG, TRACK_META, type SessionTrack } from "@/lib/coaches/t
 import { DEFAULT_SESSION_TITLE } from "@/lib/copy";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 function formatDate(d: Date): string {
   return d.toLocaleDateString("it-IT", {
@@ -119,18 +121,26 @@ export default async function AdminPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-6 py-8">
-      <div className="flex items-center gap-3">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-md bg-secondary text-accent">
-          <ShieldCheck className="size-5" />
-        </span>
-        <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">
-            Admin
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Panoramica interna: registrazioni, utilizzo, attività recente.
-          </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-md bg-secondary text-accent">
+            <ShieldCheck className="size-5" />
+          </span>
+          <div>
+            <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">
+              Admin
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Panoramica interna: registrazioni, utilizzo, attività recente.
+            </p>
+          </div>
         </div>
+        <Link href="/admin/experts">
+          <Button variant="outline" size="sm">
+            <Users2 className="size-4" />
+            Gestisci Advisory Board
+          </Button>
+        </Link>
       </div>
 
       <section className="space-y-3">

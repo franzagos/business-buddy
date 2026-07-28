@@ -5,6 +5,7 @@ import { apiError, requireApiAuth, parseBody } from "@/lib/api-utils";
 import { db } from "@/lib/db";
 import { coachingSession, coachingMessage, realCase, advisorProfile } from "@/lib/schema";
 import { getCoach, isCoachId } from "@/lib/coaches";
+import { getExtraAdvisors } from "@/lib/coaches/board-experts";
 import { getModel } from "@/lib/ai/models";
 import { buildBusinessContext } from "@/lib/coaches/business-context";
 
@@ -77,17 +78,29 @@ export async function POST(
     )
     .limit(50);
 
+  const extraAdvisors = await getExtraAdvisors(coachId);
+
   const selectedStatic = coach.advisoryBoard.filter((a) =>
     data.advisorIds.includes(a.id)
   );
   const selectedDb = dbAdvisors.filter((a) => data.advisorIds.includes(a.id));
+  const selectedExtra = extraAdvisors.filter((a) =>
+    data.advisorIds.includes(a.id)
+  );
 
-  if (selectedStatic.length === 0 && selectedDb.length === 0) {
+  if (
+    selectedStatic.length === 0 &&
+    selectedDb.length === 0 &&
+    selectedExtra.length === 0
+  ) {
     return apiError("Nessun advisor valido selezionato", 400);
   }
 
   const advisorBriefs = [
     ...selectedStatic.map(
+      (a) => `## ${a.name}\nLente: ${a.lens}\nStile: ${a.style}`
+    ),
+    ...selectedExtra.map(
       (a) => `## ${a.name}\nLente: ${a.lens}\nStile: ${a.style}`
     ),
     ...selectedDb.map(
@@ -121,7 +134,9 @@ ${advisorBriefs}`;
     content: data.problem,
   });
 
-  const advisorNames = [...selectedStatic, ...selectedDb].map((a) => a.name);
+  const advisorNames = [...selectedStatic, ...selectedExtra, ...selectedDb].map(
+    (a) => a.name
+  );
   const businessContext = await buildBusinessContext(session.user.id, coachId);
 
   const result = streamText({

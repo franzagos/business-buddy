@@ -6,6 +6,7 @@ import { requireAuth } from "@/lib/session";
 import { db } from "@/lib/db";
 import { coachingSession, coachingMessage, advisorProfile } from "@/lib/schema";
 import { getCoach, isCoachId } from "@/lib/coaches";
+import { getExtraAdvisors } from "@/lib/coaches/board-experts";
 import { findMatchingBusiness } from "@/lib/coaches/business-context";
 import { COACH_META } from "@/lib/coaches/meta";
 import { ChatTranscript } from "@/components/chat/chat-transcript";
@@ -72,9 +73,12 @@ export default async function ChatSessionPage({
     )
     .limit(50);
 
+  const extraAdvisors = await getExtraAdvisors(coachId);
+
   const advisors = [
     ...coach.advisoryBoard.map((a) => ({ id: a.id, name: a.name })),
     ...dbAdvisors.map((a) => ({ id: a.id, name: a.name })),
+    ...extraAdvisors.map((a) => ({ id: a.id, name: a.name })),
   ];
   const hasOwnAdvisorProfile = dbAdvisors.some(
     (a) => a.ownerUserId === session.user.id

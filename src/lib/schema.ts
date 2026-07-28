@@ -283,6 +283,27 @@ export const advisorProfile = pgTable(
   (table) => [index("advisor_profile_owner_user_id_idx").on(table.ownerUserId)]
 );
 
+// Admin-curated Advisory Board experts, same shape as the static roster in
+// src/lib/coaches/*/advisory-board.ts (Munger, Bezos, etc.) but editable at
+// runtime from /admin/experts instead of shipped in code. `coachId = null`
+// means the expert is available in every coach's Advisory Board.
+export const boardExpert = pgTable(
+  "board_expert",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    coachId: text("coach_id"),
+    name: text("name").notNull(),
+    lens: text("lens").notNull(),
+    style: text("style").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [index("board_expert_coach_id_idx").on(table.coachId)]
+);
+
 // A user can describe multiple businesses (e.g. their agency AND a side
 // startup). Each business is independently taggable to a coach and can
 // carry its own knowledge base documents.
