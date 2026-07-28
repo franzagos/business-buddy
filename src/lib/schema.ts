@@ -273,20 +273,53 @@ export const advisorProfile = pgTable(
   (table) => [index("advisor_profile_owner_user_id_idx").on(table.ownerUserId)]
 );
 
-export const businessProfile = pgTable("business_profile", {
-  userId: text("user_id")
-    .primaryKey()
-    .references(() => user.id, { onDelete: "cascade" }),
-  // "executive" | "agency" | "startup" | "other" | null (not set).
-  // When it matches the active coach, that coach uses this business as the
-  // default worked example in exercises unless the user says otherwise.
-  businessType: text("business_type"),
-  context: text("context"),
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
-});
+// A user can describe multiple businesses (e.g. their agency AND a side
+// startup). Each business is independently taggable to a coach and can
+// carry its own knowledge base documents.
+export const business = pgTable(
+  "business",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    ownerUserId: text("owner_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    // "executive" | "agency" | "startup" | "general" | null (not tagged).
+    // When it matches the active coach, that coach uses this business (the
+    // most recently updated one, if there's more than one match) as the
+    // default worked example in exercises, unless the user says otherwise.
+    businessType: text("business_type"),
+    context: text("context"),
+    notes: text("notes"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("business_owner_user_id_idx").on(table.ownerUserId),
+    index("business_type_idx").on(table.businessType),
+  ]
+);
+
+// A knowledge-base file attached to a business. `content` holds extracted
+// text (currently .txt/.md only) used as prompt context; other file types
+// are stored but not injected into prompts yet.
+export const businessDocument = pgTable(
+  "business_document",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    businessId: uuid("business_id")
+      .notNull()
+      .references(() => business.id, { onDelete: "cascade" }),
+    fileName: text("file_name").notNull(),
+    fileUrl: text("file_url").notNull(),
+    mimeType: text("mime_type"),
+    sizeBytes: integer("size_bytes").notNull(),
+    content: text("content"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("business_document_business_id_idx").on(table.businessId)]
+);
 // =============================================================================

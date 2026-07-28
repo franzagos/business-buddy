@@ -11,7 +11,7 @@ export interface StorageResult {
 // Allowed file extensions
 const ALLOWED_EXTENSIONS = new Set([
   ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg",
-  ".pdf", ".txt", ".csv", ".json",
+  ".pdf", ".txt", ".md", ".csv", ".json",
 ]);
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB

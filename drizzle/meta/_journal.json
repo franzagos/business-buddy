@@ -22,6 +22,13 @@
       "when": 1785189702083,
       "tag": "0002_mute_oracle",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785190727274,
+      "tag": "0003_burly_nova",
+      "breakpoints": true
     }
   ]
 }

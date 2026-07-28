@@ -142,16 +142,17 @@ function SidebarContent({ recentSessions = [] }: SidebarProps) {
         </Link>
 
         <Link
-          href="/settings/business-profile"
+          href="/settings/businesses"
           className={cn(
             "flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-sm transition-colors ease-[var(--ease-snap)] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-            pathname === "/settings/business-profile"
+            pathname === "/settings/businesses" ||
+              pathname?.startsWith("/settings/businesses/")
               ? "bg-sidebar-accent text-sidebar-foreground font-medium"
               : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground"
           )}
         >
           <Briefcase className="size-4" />
-          Il tuo business
+          I tuoi business
         </Link>
 
         <div className="flex items-center gap-2.5 truncate px-2.5 py-2 text-sm text-sidebar-foreground/75">
