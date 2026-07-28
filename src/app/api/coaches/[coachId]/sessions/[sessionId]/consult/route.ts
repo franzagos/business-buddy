@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { coachingSession, coachingMessage, realCase, advisorProfile } from "@/lib/schema";
 import { getCoach, isCoachId } from "@/lib/coaches";
 import { getExtraAdvisors } from "@/lib/coaches/board-experts";
+import { getHiddenExpertIds } from "@/lib/coaches/hidden-experts";
 import { getModel } from "@/lib/ai/models";
 import { buildBusinessContext } from "@/lib/coaches/business-context";
 
@@ -79,9 +80,10 @@ export async function POST(
     .limit(50);
 
   const extraAdvisors = await getExtraAdvisors(coachId);
+  const hiddenExpertIds = await getHiddenExpertIds(coachId);
 
-  const selectedStatic = coach.advisoryBoard.filter((a) =>
-    data.advisorIds.includes(a.id)
+  const selectedStatic = coach.advisoryBoard.filter(
+    (a) => !hiddenExpertIds.has(a.id) && data.advisorIds.includes(a.id)
   );
   const selectedDb = dbAdvisors.filter((a) => data.advisorIds.includes(a.id));
   const selectedExtra = extraAdvisors.filter((a) =>

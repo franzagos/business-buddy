@@ -304,6 +304,26 @@ export const boardExpert = pgTable(
   (table) => [index("board_expert_coach_id_idx").on(table.coachId)]
 );
 
+// Hides a static Advisory Board expert (defined in code under
+// src/lib/coaches/*/advisory-board.ts) from a given coach. Static experts have
+// no DB row of their own — this table marks their (coachId, expertId) pair as
+// hidden instead of deleting code. Restoring = deleting the row.
+export const hiddenBoardExpert = pgTable(
+  "hidden_board_expert",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    coachId: text("coach_id").notNull(),
+    expertId: text("expert_id").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("hidden_board_expert_coach_expert_idx").on(
+      table.coachId,
+      table.expertId
+    ),
+  ]
+);
+
 // A user can describe multiple businesses (e.g. their agency AND a side
 // startup). Each business is independently taggable to a coach and can
 // carry its own knowledge base documents.

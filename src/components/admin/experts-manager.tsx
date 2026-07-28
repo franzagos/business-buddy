@@ -1,8 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus, Trash2, UploadCloud } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  FileUp,
+  Loader2,
+  Plus,
+  Trash2,
+  UploadCloud,
+} from "lucide-react";
 import { toast } from "sonner";
 import { saveErrorMessage, deleteErrorMessage } from "@/lib/copy";
 import { Button } from "@/components/ui/button";
@@ -33,6 +41,15 @@ export interface BoardExpertSummary {
   createdAt: string;
 }
 
+export interface StaticExpertSummary {
+  coachId: "executive" | "agency" | "startup";
+  id: string;
+  name: string;
+  lens: string;
+  style: string;
+  hidden: boolean;
+}
+
 interface BulkImportSummary {
   created: number;
   createdNames: string[];
@@ -53,14 +70,18 @@ function truncate(text: string, max: number): string {
 
 export function ExpertsManager({
   initialExperts,
+  staticExperts,
 }: {
   initialExperts: BoardExpertSummary[];
+  staticExperts: StaticExpertSummary[];
 }) {
   const router = useRouter();
   const [experts, setExperts] = useState(initialExperts);
+  const [statics, setStatics] = useState(staticExperts);
   const [filter, setFilter] = useState<CoachFilter>("all");
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingKey, setTogglingKey] = useState<string | null>(null);
 
   // Manual add form state
   const [name, setName] = useState("");
@@ -77,11 +98,69 @@ export function ExpertsManager({
   const [importSummary, setImportSummary] = useState<BulkImportSummary | null>(
     null
   );
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleFilesSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (files.length === 0) return;
+
+    try {
+      const contents = await Promise.all(files.map((f) => f.text()));
+      // Multiple files: join with a blank line so each file's H3 blocks
+      // still parse independently on the server.
+      setMarkdown((prev) => {
+        const joined = contents.join("\n\n");
+        return prev.trim() ? `${prev}\n\n${joined}` : joined;
+      });
+      toast.success(
+        files.length === 1
+          ? `Caricato ${files[0].name}.`
+          : `Caricati ${files.length} file.`
+      );
+    } catch {
+      toast.error("Non sono riuscito a leggere il file. Riprova.");
+    }
+  }
 
   const filteredExperts = useMemo(() => {
     if (filter === "all") return experts;
     return experts.filter((e) => e.coachId === filter || e.coachId === null);
   }, [experts, filter]);
+
+  const filteredStatics = useMemo(() => {
+    if (filter === "all") return statics;
+    return statics.filter((s) => s.coachId === filter);
+  }, [statics, filter]);
+
+  async function handleToggleHidden(expert: StaticExpertSummary) {
+    const key = `${expert.coachId}:${expert.id}`;
+    setTogglingKey(key);
+    try {
+      const res = await fetch("/api/admin/hidden-experts", {
+        method: expert.hidden ? "DELETE" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ coachId: expert.coachId, expertId: expert.id }),
+      });
+      if (!res.ok) {
+        toast.error(saveErrorMessage("l'esperto"));
+        return;
+      }
+      setStatics((prev) =>
+        prev.map((s) =>
+          s.coachId === expert.coachId && s.id === expert.id
+            ? { ...s, hidden: !s.hidden }
+            : s
+        )
+      );
+      toast.success(expert.hidden ? "Esperto ripristinato." : "Esperto nascosto.");
+      router.refresh();
+    } catch {
+      toast.error(saveErrorMessage("l'esperto"));
+    } finally {
+      setTogglingKey(null);
+    }
+  }
 
   async function handleAdd() {
     if (!name.trim() || !lens.trim() || !style.trim()) {
@@ -317,6 +396,73 @@ export function ExpertsManager({
         </CardContent>
       </Card>
 
+      {/* Static (code-defined) experts */}
+      <Card className="p-6">
+        <CardContent className="space-y-4 p-0">
+          <div>
+            <h2 className="text-sm font-medium text-foreground">
+              Esperti predefiniti
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Roster fisso definito nel codice. Non puoi eliminarli, ma puoi
+              nasconderli dall&apos;Advisory Board di un coach.
+            </p>
+          </div>
+          {filteredStatics.length === 0 ? (
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              Nessun esperto predefinito in questa vista.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {filteredStatics.map((s) => {
+                const key = `${s.coachId}:${s.id}`;
+                return (
+                  <Card
+                    key={key}
+                    className={`p-4 ${s.hidden ? "opacity-60" : ""}`}
+                  >
+                    <CardContent className="flex items-start justify-between gap-3 p-0">
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-medium text-foreground">
+                            {s.name}
+                          </p>
+                          <Badge variant="outline">{coachLabel(s.coachId)}</Badge>
+                          {s.hidden && (
+                            <Badge variant="secondary">Nascosto</Badge>
+                          )}
+                        </div>
+                        <p className="line-clamp-2 text-xs text-muted-foreground">
+                          {truncate(s.lens || "(nessuna lente)", 160)}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={
+                          s.hidden ? `Ripristina ${s.name}` : `Nascondi ${s.name}`
+                        }
+                        disabled={togglingKey === key}
+                        onClick={() => handleToggleHidden(s)}
+                        className="shrink-0"
+                      >
+                        {togglingKey === key ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : s.hidden ? (
+                          <Eye className="size-4" />
+                        ) : (
+                          <EyeOff className="size-4" />
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Bulk import */}
       <Card className="p-6">
         <CardContent className="space-y-4 p-0">
@@ -325,9 +471,29 @@ export function ExpertsManager({
               Importa da Markdown
             </h2>
             <p className="text-xs text-muted-foreground">
-              Incolla il contenuto di un file Advisory-Board.md (formato
-              &quot;### Nome&quot; con bullet &quot;- **Label:** testo&quot;).
+              Carica un file Advisory-Board.md, oppure incolla il testo qui
+              sotto (formato &quot;### Nome&quot; con bullet
+              &quot;- **Label:** testo&quot;).
             </p>
+          </div>
+          <div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".md,.markdown,.txt,text/markdown,text/plain"
+              multiple
+              className="hidden"
+              onChange={handleFilesSelected}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <FileUp className="size-4" />
+              Carica file .md
+            </Button>
           </div>
           <Textarea
             value={markdown}

@@ -4,7 +4,8 @@ import Link from "next/link";
 import { ArrowLeft, Users2 } from "lucide-react";
 import { requireAuth } from "@/lib/session";
 import { db } from "@/lib/db";
-import { boardExpert } from "@/lib/schema";
+import { boardExpert, hiddenBoardExpert } from "@/lib/schema";
+import { COACH_IDS, getCoach } from "@/lib/coaches";
 import { ExpertsManager } from "@/components/admin/experts-manager";
 
 export default async function AdminExpertsPage() {
@@ -26,6 +27,25 @@ export default async function AdminExpertsPage() {
     .from(boardExpert)
     .orderBy(desc(boardExpert.createdAt))
     .limit(200);
+
+  const hiddenRows = await db
+    .select({
+      coachId: hiddenBoardExpert.coachId,
+      expertId: hiddenBoardExpert.expertId,
+    })
+    .from(hiddenBoardExpert);
+  const hiddenSet = new Set(hiddenRows.map((r) => `${r.coachId}:${r.expertId}`));
+
+  const staticExperts = COACH_IDS.flatMap((coachId) =>
+    getCoach(coachId).advisoryBoard.map((a) => ({
+      coachId,
+      id: a.id,
+      name: a.name,
+      lens: a.lens,
+      style: a.style,
+      hidden: hiddenSet.has(`${coachId}:${a.id}`),
+    }))
+  );
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-6 py-8">
@@ -58,6 +78,7 @@ export default async function AdminExpertsPage() {
           ...e,
           createdAt: e.createdAt.toISOString(),
         }))}
+        staticExperts={staticExperts}
       />
     </div>
   );
