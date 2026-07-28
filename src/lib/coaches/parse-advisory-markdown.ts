@@ -38,8 +38,9 @@ export interface ParseAdvisoryMarkdownResult {
 
 const H3_RE = /^###\s+(.+)$/;
 const H2_RE = /^##\s+(?!#)(.+)$/;
-// - **Label:** content   (also tolerates missing bold markers)
-const BULLET_RE = /^-\s*(?:\*\*)?([^:*]+?)(?:\*\*)?:\s*(.+)$/;
+// - **Label:** content   (bold can wrap just the label or the label+colon;
+// stripping all "**" first makes both variants parse identically)
+const BULLET_RE = /^-\s*([^:]+?):\s*(.+)$/;
 
 export function parseAdvisoryMarkdown(
   markdown: string
@@ -108,7 +109,7 @@ export function parseAdvisoryMarkdown(
 
     if (currentHeading === null) continue;
 
-    const bulletMatch = BULLET_RE.exec(line);
+    const bulletMatch = BULLET_RE.exec(line.replace(/\*\*/g, ""));
     if (bulletMatch) {
       currentBullets.push({
         label: bulletMatch[1],
