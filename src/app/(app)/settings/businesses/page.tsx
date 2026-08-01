@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, inArray, sql } from "drizzle-orm";
 import { Briefcase, Plus, FileText } from "lucide-react";
 import { requireAuth } from "@/lib/session";
 import { db } from "@/lib/db";
@@ -28,12 +28,21 @@ export default async function BusinessesPage() {
 
   const docCounts = new Map<string, number>();
   if (businesses.length > 0) {
-    const docs = await db
-      .select({ businessId: businessDocument.businessId })
+    const counts = await db
+      .select({
+        businessId: businessDocument.businessId,
+        count: sql<number>`count(*)`,
+      })
       .from(businessDocument)
-      .limit(250);
-    for (const d of docs) {
-      docCounts.set(d.businessId, (docCounts.get(d.businessId) ?? 0) + 1);
+      .where(
+        inArray(
+          businessDocument.businessId,
+          businesses.map((b) => b.id)
+        )
+      )
+      .groupBy(businessDocument.businessId);
+    for (const c of counts) {
+      docCounts.set(c.businessId, Number(c.count));
     }
   }
 

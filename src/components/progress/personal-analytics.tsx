@@ -59,7 +59,7 @@ function ScoreTrendChart({ trend }: { trend: TrendPoint[] }) {
 
   const width = 640;
   const height = 160;
-  const padX = 8;
+  const padX = 28;
   const padTop = 12;
   const padBottom = 24;
 
@@ -117,6 +117,48 @@ function ScoreTrendChart({ trend }: { trend: TrendPoint[] }) {
           strokeWidth={1}
         />
 
+        {/* y-axis labels: baked in so the chart reads without hovering */}
+        {[0, 5, 10].map((v) => (
+          <text
+            key={v}
+            x={padX - 8}
+            y={yFor(v)}
+            textAnchor="end"
+            dominantBaseline="middle"
+            className="fill-muted-foreground font-mono text-[9px] tabular-nums"
+          >
+            {v}
+          </text>
+        ))}
+
+        {/* x-axis: first and last point dates, always visible */}
+        {n > 0 && (
+          <text
+            x={xFor(0)}
+            y={height - 6}
+            textAnchor="start"
+            className="fill-muted-foreground text-[9px]"
+          >
+            {new Date(trend[0].date).toLocaleDateString("it-IT", {
+              day: "2-digit",
+              month: "short",
+            })}
+          </text>
+        )}
+        {n > 1 && (
+          <text
+            x={xFor(n - 1)}
+            y={height - 6}
+            textAnchor="end"
+            className="fill-muted-foreground text-[9px]"
+          >
+            {new Date(trend[n - 1].date).toLocaleDateString("it-IT", {
+              day: "2-digit",
+              month: "short",
+            })}
+          </text>
+        )}
+
         <path d={areaPath} fill={`url(#${gradientId})`} stroke="none" />
         <path
           d={linePath}
@@ -138,6 +180,18 @@ function ScoreTrendChart({ trend }: { trend: TrendPoint[] }) {
             strokeWidth={hoverIdx === i ? 2 : 0}
           />
         ))}
+
+        {/* direct label on the most recent point — the value users care about most */}
+        {n > 0 && (
+          <text
+            x={xFor(n - 1)}
+            y={yFor(trend[n - 1].avgScore) - 10}
+            textAnchor="end"
+            className="fill-foreground font-mono text-[10px] font-medium tabular-nums"
+          >
+            {trend[n - 1].avgScore.toFixed(1)}
+          </text>
+        )}
 
         {hoverIdx !== null && (
           <line

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { and, desc, eq, lt } from "drizzle-orm";
-import { apiError, apiResponse, requireApiAuth } from "@/lib/api-utils";
+import { apiError, apiResponse, requireApiAuth, applyRateLimit } from "@/lib/api-utils";
+import { RATE_LIMITS } from "@/lib/rate-limit";
 import { db } from "@/lib/db";
 import { coachingSession, progressEntry } from "@/lib/schema";
 import { getCoach, isCoachId } from "@/lib/coaches";
@@ -30,6 +31,9 @@ export async function POST(
 ) {
   const { session, error } = await requireApiAuth();
   if (error) return error;
+
+  const limited = await applyRateLimit("session-end", RATE_LIMITS.chat);
+  if (limited) return limited;
 
   const parsed = paramsSchema.safeParse(await params);
   if (!parsed.success) {

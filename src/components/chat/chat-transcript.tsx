@@ -67,12 +67,27 @@ export function ChatTranscript({
   const [recap, setRecap] = useState<SessionRecap | null>(null);
   const [recapOpen, setRecapOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  // Only auto-scroll while the user is already near the bottom — once they
+  // scroll up to reread earlier messages, streamed chunks must not yank the
+  // view back down. Re-arms once they scroll back near the bottom themselves.
+  const stickToBottomRef = useRef(true);
   const sessionCoachmark = useCoachmark("session-memory");
   const boardCoachmark = useCoachmark("advisory-board");
 
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (stickToBottomRef.current) {
+      scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages, isStreaming, isConsulting]);
+
+  function handleScroll() {
+    const el = containerRef.current;
+    if (!el) return;
+    const distanceFromBottom =
+      el.scrollHeight - el.scrollTop - el.clientHeight;
+    stickToBottomRef.current = distanceFromBottom < 150;
+  }
 
   // Pre-fill the input from an open topic the user resumed from the
   // dashboard (?draft=...) — never auto-sent, the user still reviews it.
@@ -119,7 +134,9 @@ export function ChatTranscript({
         }
       }
       throw new Error(
-        "Qualcosa è andato storto durante l'invio del messaggio. Riprova."
+        res.status >= 500
+          ? "Il coach non è raggiungibile in questo momento. Riprova tra poco."
+          : "Non sono riuscito a inviare il messaggio. Riprova."
       );
     }
 
@@ -155,6 +172,7 @@ export function ChatTranscript({
 
     setError(null);
     setInput("");
+    stickToBottomRef.current = true;
     setMessages((prev) => [
       ...prev,
       { id: `local-${Date.now()}`, role: "user", content },
@@ -174,9 +192,11 @@ export function ChatTranscript({
       }
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "Qualcosa è andato storto. Riprova."
+        err instanceof TypeError
+          ? "Connessione assente. Controlla la rete e riprova."
+          : err instanceof Error
+            ? err.message
+            : "Non sono riuscito a inviare il messaggio. Riprova."
       );
       setMessages((prev) => prev.slice(0, -1));
     } finally {
@@ -231,6 +251,7 @@ export function ChatTranscript({
 
     setError(null);
     setBoardOpen(false);
+    stickToBottomRef.current = true;
     setMessages((prev) => [
       ...prev,
       { id: `local-${Date.now()}`, role: "user", content: problem },
@@ -246,9 +267,11 @@ export function ChatTranscript({
       setSelectedAdvisors([]);
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "Qualcosa è andato storto con l'Advisory Board. Riprova."
+        err instanceof TypeError
+          ? "Connessione assente. Controlla la rete e riprova."
+          : err instanceof Error
+            ? err.message
+            : "Non sono riuscito a consultare l'Advisory Board. Riprova."
       );
       setMessages((prev) => prev.slice(0, -1));
     } finally {
@@ -260,8 +283,13 @@ export function ChatTranscript({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="mx-auto w-full max-w-3xl flex-1 space-y-6 overflow-y-auto px-6 py-8">
-        {messages.map((m) => {
+      <div
+        ref={containerRef}
+        onScroll={handleScroll}
+        className="mx-auto w-full max-w-3xl flex-1 space-y-6 overflow-y-auto px-6 py-8"
+      >
+        {messages.map((m, i) => {
+          const isLast = i === messages.length - 1;
           const isBoard =
             m.role === "assistant" && m.content.startsWith(BOARD_MESSAGE_PREFIX);
           const displayContent = isBoard
@@ -298,7 +326,9 @@ export function ChatTranscript({
                   ) : (
                     <span className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Loader2 className="size-3.5 animate-spin" />
-                      Sta scrivendo…
+                      {isLast && isConsulting
+                        ? "Sta consultando l'Advisory Board…"
+                        : "Sta scrivendo…"}
                     </span>
                   )}
                 </div>
@@ -354,7 +384,7 @@ export function ChatTranscript({
                 </p>
                 {!hasOwnAdvisorProfile && (
                   <p className="rounded-sm bg-secondary px-3 py-2 text-xs text-secondary-foreground">
-                    Prima di sentire gli altri pareri, il tuo qual è?{" "}
+                    Prima di sentire gli altri pareri, qual è il tuo?{" "}
                     <Link
                       href="/settings/advisor-profile"
                       className="font-medium underline underline-offset-2"
@@ -443,19 +473,33 @@ export function ChatTranscript({
           <label htmlFor="chat-message-input" className="sr-only">
             Messaggio per il coach
           </label>
-          <textarea
-            id="chat-message-input"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onFocus={() => {
-              if (sessionCoachmark.visible) sessionCoachmark.dismiss();
-            }}
-            disabled={busy}
-            placeholder="Scrivi il tuo messaggio…"
-            rows={2}
-            className="flex-1 resize-none rounded-sm border border-input bg-card px-3 py-2 text-[15px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
-          />
+          <div className="flex flex-1 flex-col gap-1">
+            <textarea
+              id="chat-message-input"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onFocus={() => {
+                if (sessionCoachmark.visible) sessionCoachmark.dismiss();
+              }}
+              disabled={busy}
+              placeholder="Scrivi il tuo messaggio…"
+              rows={2}
+              className="w-full resize-none rounded-sm border border-input bg-card px-3 py-2 text-[15px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+            />
+            {input.length > 18000 && (
+              <p
+                className={cn(
+                  "text-right text-xs",
+                  input.length > 20000
+                    ? "text-destructive"
+                    : "text-muted-foreground"
+                )}
+              >
+                {input.length.toLocaleString("it-IT")} / 20.000 caratteri
+              </p>
+            )}
+          </div>
           <Button
             onClick={handleSend}
             disabled={busy || !input.trim()}

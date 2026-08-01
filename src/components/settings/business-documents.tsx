@@ -54,6 +54,11 @@ export function BusinessDocuments({
       return;
     }
 
+    if (!/\.(txt|md)$/i.test(file.name)) {
+      toast.error("Formato non supportato: carica solo file .txt o .md.");
+      return;
+    }
+
     setUploading(true);
     try {
       const formData = new FormData();

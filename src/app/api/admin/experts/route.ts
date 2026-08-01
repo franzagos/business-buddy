@@ -35,6 +35,9 @@ async function requireAdmin() {
 
 /** GET — list all board experts (admin only). */
 export async function GET() {
+  const limited = await applyRateLimit("admin-experts-list", RATE_LIMITS.api);
+  if (limited) return limited;
+
   const { error } = await requireAdmin();
   if (error) return error;
 

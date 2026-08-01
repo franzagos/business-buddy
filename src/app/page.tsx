@@ -153,7 +153,7 @@ export default async function LandingPage() {
       <section className="mx-auto max-w-6xl px-6 pt-12 pb-20 text-center sm:pt-20">
         <p className="mx-auto mb-4 inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
           <Target className="size-3.5 text-accent" />
-          Tre coach specializzati. Una decisione più solida.
+          Executive, Agency, Startup — un coach per ogni fase
         </p>
         <h1 className="mx-auto max-w-3xl font-display text-4xl font-bold tracking-[-0.02em] text-foreground sm:text-5xl md:text-[56px] md:leading-[1.05]">
           Porta un problema reale. Esci con una direzione chiara.
@@ -422,8 +422,8 @@ export default async function LandingPage() {
               </p>
               <p className="max-w-xs text-sm text-muted-foreground">
                 Contesto e materiali della tua azienda entrano direttamente
-                negli esercizi e nelle consulenze, invece di scenari
-                generici.
+                negli esercizi e nelle sessioni di coaching, invece di
+                scenari generici.
               </p>
             </CardContent>
           </Card>

@@ -31,6 +31,15 @@ export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL,
   database: drizzleAdapter(db, { provider: "pg" }),
 
+  // Explicit session lifetime instead of relying on library defaults: 30 days
+  // total, refreshed after a day of activity. Cookies are httpOnly + secure
+  // in production and sameSite=lax by default (Better Auth's own default,
+  // kept here for visibility rather than left implicit).
+  session: {
+    expiresIn: 60 * 60 * 24 * 30,
+    updateAge: 60 * 60 * 24,
+  },
+
   // Email + password (always enabled)
   emailAndPassword: {
     enabled: true,

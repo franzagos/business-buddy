@@ -4,7 +4,9 @@ import {
   apiResponse,
   requireApiAuth,
   parseBody,
+  applyRateLimit,
 } from "@/lib/api-utils";
+import { RATE_LIMITS } from "@/lib/rate-limit";
 import { db } from "@/lib/db";
 import { advisorProfile } from "@/lib/schema";
 
@@ -12,6 +14,9 @@ import { advisorProfile } from "@/lib/schema";
 export async function GET() {
   const { session, error } = await requireApiAuth();
   if (error) return error;
+
+  const limited = await applyRateLimit("advisor-profile", RATE_LIMITS.api);
+  if (limited) return limited;
 
   const [profile] = await db
     .select({
@@ -42,6 +47,9 @@ const bodySchema = z.object({
 export async function PUT(req: Request) {
   const { session, error } = await requireApiAuth();
   if (error) return error;
+
+  const limited = await applyRateLimit("advisor-profile", RATE_LIMITS.api);
+  if (limited) return limited;
 
   const { data, error: bodyError } = await parseBody(req, bodySchema);
   if (bodyError) return bodyError;

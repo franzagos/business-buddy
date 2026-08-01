@@ -96,10 +96,16 @@ export function OpenTopicCard({
           )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {rating !== null && (
+          {rating !== null ? (
             <span className="font-mono text-xs text-muted-foreground">
               {rating}/10
             </span>
+          ) : (
+            !open && (
+              <span className="hidden text-xs text-muted-foreground sm:inline">
+                Valuta la tua competenza
+              </span>
+            )
           )}
           <ChevronDown
             className={cn(

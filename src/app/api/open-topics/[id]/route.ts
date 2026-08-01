@@ -5,7 +5,9 @@ import {
   apiResponse,
   requireApiAuth,
   parseBody,
+  applyRateLimit,
 } from "@/lib/api-utils";
+import { RATE_LIMITS } from "@/lib/rate-limit";
 import { db } from "@/lib/db";
 import { openTopic } from "@/lib/schema";
 
@@ -23,6 +25,9 @@ export async function PATCH(
 ) {
   const { session, error } = await requireApiAuth();
   if (error) return error;
+
+  const limited = await applyRateLimit("open-topics", RATE_LIMITS.api);
+  if (limited) return limited;
 
   const parsedParams = paramsSchema.safeParse(await params);
   if (!parsedParams.success) {

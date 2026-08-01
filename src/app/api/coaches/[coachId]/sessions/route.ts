@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { and, desc, eq } from "drizzle-orm";
-import { apiResponse, apiError, requireApiAuth } from "@/lib/api-utils";
+import { apiResponse, apiError, requireApiAuth, applyRateLimit } from "@/lib/api-utils";
+import { RATE_LIMITS } from "@/lib/rate-limit";
 import { db } from "@/lib/db";
 import { coachingSession, coachingMessage } from "@/lib/schema";
 import { getCoach, isCoachId } from "@/lib/coaches";
@@ -24,6 +25,9 @@ export async function GET(
 ) {
   const { session, error } = await requireApiAuth();
   if (error) return error;
+
+  const limited = await applyRateLimit("sessions", RATE_LIMITS.api);
+  if (limited) return limited;
 
   const parsed = paramsSchema.safeParse(await params);
   if (!parsed.success) {
@@ -60,6 +64,9 @@ export async function POST(
 ) {
   const { session, error } = await requireApiAuth();
   if (error) return error;
+
+  const limited = await applyRateLimit("sessions", RATE_LIMITS.api);
+  if (limited) return limited;
 
   const parsed = paramsSchema.safeParse(await params);
   if (!parsed.success) {

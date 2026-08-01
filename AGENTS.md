@@ -8,7 +8,7 @@ Business Buddy is an AI coaching web app: three coaches (Executive, Agency, Star
 
 - **Framework**: Next.js 16 (App Router, Turbopack), React 19, TypeScript 5.9
 - **AI**: Vercel AI SDK 5 + OpenRouter (100+ models via single API)
-- **Auth**: Better Auth (email/password + Google OAuth)
+- **Auth**: Better Auth (email/password + magic link via Resend)
 - **Database**: PostgreSQL + Drizzle ORM
 - **UI**: shadcn/ui + Tailwind CSS 4 + dark mode (next-themes)
 - **Storage**: Local filesystem (dev) / Vercel Blob (production)
